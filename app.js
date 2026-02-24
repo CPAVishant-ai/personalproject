@@ -213,13 +213,27 @@ function generateId() {
 
 function saveExpense(e) {
   e.preventDefault();
+  const category = document.getElementById('expCategory').value.trim();
+  const nature = document.getElementById('expNature').value.trim();
+
+  // Auto-add new category / nature on the fly
+  let newAdded = [];
+  if (category && !state.categories.includes(category)) {
+    state.categories.push(category);
+    newAdded.push(`category "${category}"`);
+  }
+  if (nature && !state.nature.includes(nature)) {
+    state.nature.push(nature);
+    newAdded.push(`nature "${nature}"`);
+  }
+
   const expense = {
     id: generateId(),
     date: document.getElementById('expDate').value,
     amount: parseFloat(document.getElementById('expAmount').value),
     description: '',
-    category: document.getElementById('expCategory').value,
-    nature: document.getElementById('expNature').value,
+    category: category || 'Other',
+    nature: nature || 'Personal',
     paidBy: document.getElementById('expPaidBy').value,
     notes: '',
     createdAt: Date.now(),
@@ -227,13 +241,20 @@ function saveExpense(e) {
   state.expenses.push(expense);
   saveState();
   populateGlobalMonthFilter();
-  showToast('Expense added!', 'success');
+  populateSelects();
+  if (newAdded.length) {
+    showToast(`Expense added! New ${newAdded.join(' & ')} saved.`, 'success');
+  } else {
+    showToast('Expense added!', 'success');
+  }
   resetForm();
   renderTodayStats();
 }
 
 function resetForm() {
   document.getElementById('expenseForm').reset();
+  document.getElementById('expCategory').value = '';
+  document.getElementById('expNature').value = '';
   setDefaultDate();
 }
 
@@ -1595,8 +1616,11 @@ function addPaidBy() {
 
 /* ============================================================ SELECT POPULATION */
 function populateSelects() {
-  populateSelectEl(document.getElementById('expCategory'), state.categories, '', 'Select Category');
-  populateSelectEl(document.getElementById('expNature'), state.nature, '', 'Select Nature');
+  // Category + Nature use datalist (free text + suggestions)
+  const catList = document.getElementById('categoryList');
+  const natList = document.getElementById('natureList');
+  if (catList) catList.innerHTML = state.categories.map(c => `<option value="${c}"></option>`).join('');
+  if (natList) natList.innerHTML = state.nature.map(n => `<option value="${n}"></option>`).join('');
   populateSelectEl(document.getElementById('expPaidBy'), state.paidBy, '', 'Select Payment Method');
 
   // Filter selects on expenses page

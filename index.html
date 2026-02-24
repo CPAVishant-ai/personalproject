@@ -222,15 +222,15 @@
           </div>
           <div class="form-group">
             <label>Category *</label>
-            <select id="expCategory" class="input" required>
-              <option value="">Select Category</option>
-            </select>
+            <input type="text" id="expCategory" class="input" list="categoryList" placeholder="Select or type new…" required autocomplete="off" />
+            <datalist id="categoryList"></datalist>
+            <span class="field-hint">Type anything — new entries are saved automatically</span>
           </div>
           <div class="form-group">
             <label>Nature *</label>
-            <select id="expNature" class="input" required>
-              <option value="">Select Nature</option>
-            </select>
+            <input type="text" id="expNature" class="input" list="natureList" placeholder="Select or type new…" required autocomplete="off" />
+            <datalist id="natureList"></datalist>
+            <span class="field-hint">Type anything — new entries are saved automatically</span>
           </div>
           <div class="form-group form-group-full">
             <label>Paid By *</label>
