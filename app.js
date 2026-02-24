@@ -1595,9 +1595,9 @@ function addPaidBy() {
 
 /* ============================================================ SELECT POPULATION */
 function populateSelects() {
-  populateSelectEl(document.getElementById('expCategory'), state.categories);
-  populateSelectEl(document.getElementById('expNature'), state.nature);
-  populateSelectEl(document.getElementById('expPaidBy'), state.paidBy);
+  populateSelectEl(document.getElementById('expCategory'), state.categories, '', 'Select Category');
+  populateSelectEl(document.getElementById('expNature'), state.nature, '', 'Select Nature');
+  populateSelectEl(document.getElementById('expPaidBy'), state.paidBy, '', 'Select Payment Method');
 
   // Filter selects on expenses page
   const filterCat = document.getElementById('filterCategory');
