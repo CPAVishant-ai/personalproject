@@ -19,6 +19,7 @@ let state = {
 let importData_raw = null;  // holds parsed Excel data during import
 let importHeaders = [];
 let chartInstances = {};    // track chart.js instances
+let selectedIds = new Set(); // tracks selected expense IDs for bulk operations
 
 /* ============================================================ CONSTANTS */
 const CATEGORY_COLORS = [
@@ -216,11 +217,11 @@ function saveExpense(e) {
     id: generateId(),
     date: document.getElementById('expDate').value,
     amount: parseFloat(document.getElementById('expAmount').value),
-    description: document.getElementById('expDescription').value.trim(),
+    description: '',
     category: document.getElementById('expCategory').value,
     nature: document.getElementById('expNature').value,
     paidBy: document.getElementById('expPaidBy').value,
-    notes: document.getElementById('expNotes').value.trim(),
+    notes: '',
     createdAt: Date.now(),
   };
   state.expenses.push(expense);
@@ -257,8 +258,6 @@ function openEditModal(id) {
   document.getElementById('editExpId').value = exp.id;
   document.getElementById('editDate').value = exp.date;
   document.getElementById('editAmount').value = exp.amount;
-  document.getElementById('editDescription').value = exp.description || '';
-  document.getElementById('editNotes').value = exp.notes || '';
 
   const editCat = document.getElementById('editCategory');
   const editNat = document.getElementById('editNature');
@@ -279,11 +278,9 @@ function updateExpense(e) {
     ...state.expenses[idx],
     date: document.getElementById('editDate').value,
     amount: parseFloat(document.getElementById('editAmount').value),
-    description: document.getElementById('editDescription').value.trim(),
     category: document.getElementById('editCategory').value,
     nature: document.getElementById('editNature').value,
     paidBy: document.getElementById('editPaidBy').value,
-    notes: document.getElementById('editNotes').value.trim(),
   };
   saveState();
   closeModal('editModal');
@@ -565,16 +562,23 @@ function renderExpensesTable() {
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🔍</div><p>No expenses found.</p></div></td></tr>`;
     document.getElementById('tableCount').textContent = '0 records';
     document.getElementById('tableTotal').textContent = '';
+    updateBulkBar();
     return;
   }
 
+  // Keep only selected IDs that are in current filtered view
+  const visibleIds = new Set(expenses.map(e => e.id));
+  selectedIds = new Set([...selectedIds].filter(id => visibleIds.has(id)));
+
   tbody.innerHTML = expenses.map(e => `
-    <tr>
-      <td>${formatDate(e.date)}</td>
-      <td>
-        <div style="font-weight:600">${e.description || '—'}</div>
-        ${e.notes ? `<div class="hint" style="margin-top:2px">${e.notes}</div>` : ''}
+    <tr class="${selectedIds.has(e.id) ? 'row-selected' : ''}">
+      <td class="col-check">
+        <label class="custom-checkbox">
+          <input type="checkbox" ${selectedIds.has(e.id) ? 'checked' : ''} onchange="toggleSelectRow('${e.id}', this)" />
+          <span class="checkmark"></span>
+        </label>
       </td>
+      <td>${formatDate(e.date)}</td>
       <td>
         <span class="badge-category" style="background:${getCategoryColor(e.category)}22;color:${getCategoryColor(e.category)}">
           ${getCategoryEmoji(e.category)} ${e.category}
@@ -585,12 +589,21 @@ function renderExpensesTable() {
       <td>${e.paidBy}</td>
       <td>
         <div class="action-btns">
-          <button class="btn-icon btn-edit" onclick="openEditModal('${e.id}')" title="Edit">✏️</button>
-          <button class="btn-icon btn-delete" onclick="deleteExpense('${e.id}')" title="Delete">🗑️</button>
+          <button class="btn-icon btn-edit" onclick="openEditModal('${e.id}')" title="Edit">&#9998;</button>
+          <button class="btn-icon btn-delete" onclick="deleteExpense('${e.id}')" title="Delete">&#128465;</button>
         </div>
       </td>
     </tr>
   `).join('');
+
+  // Sync select-all checkbox state
+  const selectAllEl = document.getElementById('selectAll');
+  if (selectAllEl) {
+    selectAllEl.checked = expenses.length > 0 && expenses.every(e => selectedIds.has(e.id));
+    selectAllEl.indeterminate = selectedIds.size > 0 && !selectAllEl.checked;
+  }
+
+  updateBulkBar();
 
   const total = expenses.reduce((s,e)=>s+e.amount,0);
   document.getElementById('tableCount').textContent = `${expenses.length} record${expenses.length!==1?'s':''}`;
@@ -611,6 +624,127 @@ function clearFilters() {
   document.getElementById('filterFrom').value = '';
   document.getElementById('filterTo').value = '';
   renderExpensesTable();
+}
+
+/* ============================================================ BULK SELECTION */
+function toggleSelectAll(el) {
+  const rows = document.querySelectorAll('#expenseTableBody tr');
+  rows.forEach(row => {
+    const cb = row.querySelector('input[type="checkbox"]');
+    if (!cb) return;
+    const id = cb.getAttribute('onchange').match(/'([^']+)'/)?.[1];
+    if (!id) return;
+    if (el.checked) {
+      selectedIds.add(id);
+      row.classList.add('row-selected');
+    } else {
+      selectedIds.delete(id);
+      row.classList.remove('row-selected');
+    }
+    cb.checked = el.checked;
+  });
+  updateBulkBar();
+}
+
+function toggleSelectRow(id, el) {
+  if (el.checked) {
+    selectedIds.add(id);
+    el.closest('tr').classList.add('row-selected');
+  } else {
+    selectedIds.delete(id);
+    el.closest('tr').classList.remove('row-selected');
+  }
+  // Sync select-all
+  const allCbs = document.querySelectorAll('#expenseTableBody input[type="checkbox"]');
+  const allChecked = allCbs.length > 0 && [...allCbs].every(c => c.checked);
+  const selectAllEl = document.getElementById('selectAll');
+  if (selectAllEl) {
+    selectAllEl.checked = allChecked;
+    selectAllEl.indeterminate = selectedIds.size > 0 && !allChecked;
+  }
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  const countEl = document.getElementById('bulkCount');
+  if (!bar) return;
+  if (selectedIds.size > 0) {
+    countEl.textContent = selectedIds.size;
+    bar.classList.add('visible');
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+function clearSelection() {
+  selectedIds.clear();
+  document.querySelectorAll('#expenseTableBody tr').forEach(row => {
+    row.classList.remove('row-selected');
+    const cb = row.querySelector('input[type="checkbox"]');
+    if (cb) cb.checked = false;
+  });
+  const selectAllEl = document.getElementById('selectAll');
+  if (selectAllEl) { selectAllEl.checked = false; selectAllEl.indeterminate = false; }
+  updateBulkBar();
+}
+
+function bulkDelete() {
+  const count = selectedIds.size;
+  if (count === 0) return;
+  if (!confirm(`Delete ${count} selected expense${count !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+  state.expenses = state.expenses.filter(e => !selectedIds.has(e.id));
+  selectedIds.clear();
+  saveState();
+  populateGlobalMonthFilter();
+  renderExpensesTable();
+  if (document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+  showToast(`${count} expense${count !== 1 ? 's' : ''} deleted.`, 'warning');
+}
+
+function openBulkEditModal() {
+  if (selectedIds.size === 0) return;
+  document.getElementById('bulkEditCount').textContent = `(${selectedIds.size} selected)`;
+
+  const bulkCat = document.getElementById('bulkCategory');
+  const bulkNat = document.getElementById('bulkNature');
+  const bulkPay = document.getElementById('bulkPaidBy');
+  populateSelectEl(bulkCat, state.categories, '', '— Keep existing —');
+  populateSelectEl(bulkNat, state.nature, '', '— Keep existing —');
+  populateSelectEl(bulkPay, state.paidBy, '', '— Keep existing —');
+
+  document.getElementById('bulkDate').value = '';
+  document.getElementById('bulkEditModal').style.display = 'flex';
+}
+
+function applyBulkEdit(e) {
+  e.preventDefault();
+  const newCat = document.getElementById('bulkCategory').value;
+  const newNat = document.getElementById('bulkNature').value;
+  const newPay = document.getElementById('bulkPaidBy').value;
+  const newDate = document.getElementById('bulkDate').value;
+
+  if (!newCat && !newNat && !newPay && !newDate) {
+    showToast('No fields selected to update.', 'warning');
+    return;
+  }
+
+  let count = 0;
+  state.expenses.forEach(exp => {
+    if (!selectedIds.has(exp.id)) return;
+    if (newCat) exp.category = newCat;
+    if (newNat) exp.nature = newNat;
+    if (newPay) exp.paidBy = newPay;
+    if (newDate) exp.date = newDate;
+    count++;
+  });
+
+  saveState();
+  closeModal('bulkEditModal');
+  clearSelection();
+  renderExpensesTable();
+  if (document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+  showToast(`${count} expense${count !== 1 ? 's' : ''} updated!`, 'success');
 }
 
 /* ============================================================ TODAY STATS */
@@ -1557,6 +1691,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeModal('editModal');
     closeModal('budgetModal');
+    closeModal('bulkEditModal');
   }
   if (e.key === 'n' && !e.ctrlKey && !e.metaKey) navigate('add');
 });

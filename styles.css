@@ -937,3 +937,150 @@ body.dark .heatmap-day[data-level="4"] { background: #a855f7; }
   border: 2px dashed var(--border);
   border-radius: var(--radius-sm);
 }
+
+/* ============================================================ BULK ACTION BAR */
+.bulk-bar {
+  position: fixed;
+  bottom: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--surface);
+  border-radius: 14px;
+  padding: 0.65rem 0.85rem 0.65rem 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 300;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  transition: bottom 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+}
+
+.bulk-bar.visible { bottom: 1.75rem; }
+
+.bulk-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.85;
+  padding-right: 0.5rem;
+  border-right: 1px solid rgba(255,255,255,0.18);
+}
+
+.bulk-actions { display: flex; align-items: center; gap: 0.45rem; }
+
+.bulk-btn-deselect {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.75);
+  border: 1px solid rgba(255,255,255,0.15);
+  font-size: 0.78rem;
+}
+.bulk-btn-deselect:hover { background: rgba(255,255,255,0.18); color: #fff; transform: none; box-shadow: none; }
+
+.bulk-btn-edit {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  font-size: 0.78rem;
+}
+.bulk-btn-edit:hover { background: var(--primary-dark); transform: none; box-shadow: none; }
+
+.bulk-btn-delete {
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  font-size: 0.78rem;
+}
+.bulk-btn-delete:hover { background: #dc2626; transform: none; box-shadow: none; }
+
+/* ============================================================ CHECKBOXES */
+.col-check {
+  width: 44px;
+  text-align: center;
+  padding: 0.75rem 0.5rem !important;
+  cursor: default !important;
+}
+
+.col-check:hover { color: inherit !important; }
+
+.custom-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  width: 18px;
+  height: 18px;
+}
+
+.custom-checkbox input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.custom-checkbox .checkmark {
+  width: 17px;
+  height: 17px;
+  border: 2px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface2);
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-checkbox:hover .checkmark {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.custom-checkbox input:checked + .checkmark {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.custom-checkbox input:checked + .checkmark::after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.custom-checkbox input:indeterminate + .checkmark {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.custom-checkbox input:indeterminate + .checkmark::after {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 2px;
+  background: #fff;
+  border: none;
+  transform: none;
+}
+
+/* ============================================================ SELECTED ROW */
+.row-selected td {
+  background: var(--primary-light) !important;
+}
+
+body.dark .row-selected td {
+  background: rgba(108,99,255,0.12) !important;
+}
+
+/* ============================================================ BULK EDIT COUNT BADGE */
+.bulk-edit-count {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text3);
+  margin-left: 0.3rem;
+}
