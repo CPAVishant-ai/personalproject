@@ -1,0 +1,58 @@
+{
+  "name": "rupaiya-expense-tracker",
+  "version": "1.0.0",
+  "description": "Rupaiya - Personal Expense Tracker (Free Forever)",
+  "main": "electron.js",
+  "homepage": "./",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build-win": "electron-builder --win --x64",
+    "build-mac": "electron-builder --mac",
+    "build-linux": "electron-builder --linux",
+    "build-all": "electron-builder -mwl",
+    "pack": "electron-builder --dir"
+  },
+  "build": {
+    "appId": "com.rupaiya.expense-tracker",
+    "productName": "Rupaiya",
+    "copyright": "Free Forever",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "styles.css",
+      "app.js",
+      "electron.js",
+      "assets/**"
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "keywords": ["expense", "tracker", "finance", "INR", "personal"],
+  "author": "Rupaiya",
+  "license": "MIT"
+}
