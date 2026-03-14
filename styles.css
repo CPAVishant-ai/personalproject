@@ -1140,3 +1140,84 @@ body.dark .bulk-bar {
   .cards-grid { grid-template-columns: 1fr; }
   .page { padding: 10px 12px; }
 }
+
+/* ============================================================ AUTH OVERLAYS */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Loading spinner */
+.auth-spinner-wrap { text-align: center; }
+.auth-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  margin: 0 auto 12px;
+}
+.auth-spinner-text { font-size: 0.78rem; color: var(--text3); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Login card */
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px;
+  width: 320px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+.login-logo { margin-bottom: 14px; display: flex; justify-content: center; }
+.login-title { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+.login-sub { font-size: 0.78rem; color: var(--text3); margin-bottom: 24px; }
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), box-shadow var(--transition);
+  font-family: var(--font);
+}
+.btn-google:hover { background: var(--surface2); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.login-note { font-size: 0.68rem; color: var(--text3); margin-top: 14px; }
+
+/* ============================================================ TOPBAR USER INFO */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+}
+.user-avatar {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+.user-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text2);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

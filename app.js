@@ -16,6 +16,8 @@ let state = {
   sortDir: 'desc',
 };
 
+let currentUserId = null;  // set after Firebase auth resolves
+
 let importData_raw = null;  // holds parsed Excel data during import
 let importHeaders = [];
 let chartInstances = {};    // track chart.js instances
@@ -49,46 +51,75 @@ const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct
 
 /* ============================================================ INIT */
 document.addEventListener('DOMContentLoaded', () => {
-  loadState();
+  initTheme(); // theme can apply immediately (stored in localStorage)
+});
+
+// Firebase resolves auth state and dispatches this event (see firebase.js)
+document.addEventListener('firebase:authstate', async (e) => {
+  const user = e.detail;
+  document.getElementById('loadingOverlay').style.display = 'none';
+
+  if (user) {
+    currentUserId = user.uid;
+
+    // Show user info in topbar
+    const avatar = document.getElementById('userAvatar');
+    if (user.photoURL) { avatar.src = user.photoURL; avatar.style.display = 'block'; }
+    document.getElementById('userName').textContent = user.displayName || user.email || 'User';
+
+    // Show app, hide login
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('mainContent').style.display = '';
+    document.getElementById('sidebar').style.display = '';
+
+    await loadFromFirestore();
+    initApp();
+  } else {
+    currentUserId = null;
+    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('mainContent').style.display = 'none';
+    document.getElementById('sidebar').style.display = 'none';
+  }
+});
+
+async function loadFromFirestore() {
+  try {
+    const { settings, expenses } = await window._fb.loadUserData(currentUserId);
+    state.expenses = expenses;
+    if (settings.categories && settings.categories.length) state.categories = settings.categories;
+    if (settings.nature    && settings.nature.length)    state.nature    = settings.nature;
+    if (settings.paidBy    && settings.paidBy.length)    state.paidBy    = settings.paidBy;
+    if (settings.budgets)     state.budgets     = settings.budgets;
+    if (settings.savedCharts) state.savedCharts = settings.savedCharts;
+  } catch (err) {
+    console.error('Firestore load error:', err);
+    showToast('Failed to load data. Check your connection.', 'error');
+  }
+}
+
+function initApp() {
   initSidebar();
-  initTheme();
   populateSelects();
   populateGlobalMonthFilter();
   navigate('dashboard');
   setDefaultDate();
   initDropZone();
-
   document.getElementById('globalMonthFilter').addEventListener('change', () => {
     refreshCurrentPage();
   });
-});
-
-function loadState() {
-  try {
-    const raw = localStorage.getItem('rupaiya_state');
-    if (raw) {
-      const saved = JSON.parse(raw);
-      state.expenses = saved.expenses || [];
-      state.categories = saved.categories || state.categories;
-      state.nature = saved.nature || state.nature;
-      state.paidBy = saved.paidBy || state.paidBy;
-      state.budgets = saved.budgets || {};
-      state.savedCharts = saved.savedCharts || [];
-    }
-  } catch (e) { console.error('Load state error:', e); }
 }
 
+// saveState now persists only settings (categories, nature, paidBy, budgets, savedCharts).
+// Individual expense add/delete/update go through their own Firestore calls.
 function saveState() {
-  try {
-    localStorage.setItem('rupaiya_state', JSON.stringify({
-      expenses: state.expenses,
-      categories: state.categories,
-      nature: state.nature,
-      paidBy: state.paidBy,
-      budgets: state.budgets,
-      savedCharts: state.savedCharts,
-    }));
-  } catch (e) { console.error('Save state error:', e); }
+  if (!currentUserId) return;
+  window._fb.saveSettings(currentUserId, {
+    categories:  state.categories,
+    nature:      state.nature,
+    paidBy:      state.paidBy,
+    budgets:     state.budgets,
+    savedCharts: state.savedCharts,
+  }).catch(e => console.error('Firestore settings save error:', e));
 }
 
 /* ============================================================ NAVIGATION */
@@ -239,7 +270,8 @@ function saveExpense(e) {
     createdAt: Date.now(),
   };
   state.expenses.push(expense);
-  saveState();
+  if (currentUserId) window._fb.addExpense(currentUserId, expense).catch(console.error);
+  saveState(); // persists any new category/nature added above
   populateGlobalMonthFilter();
   populateSelects();
   if (newAdded.length) {
@@ -267,7 +299,7 @@ function setDefaultDate() {
 function deleteExpense(id) {
   if (!confirm('Delete this expense?')) return;
   state.expenses = state.expenses.filter(e => e.id !== id);
-  saveState();
+  if (currentUserId) window._fb.deleteExpense(currentUserId, id).catch(console.error);
   renderExpensesTable();
   populateGlobalMonthFilter();
   showToast('Expense deleted.', 'warning');
@@ -295,15 +327,15 @@ function updateExpense(e) {
   const id = document.getElementById('editExpId').value;
   const idx = state.expenses.findIndex(ex => ex.id === id);
   if (idx < 0) return;
-  state.expenses[idx] = {
-    ...state.expenses[idx],
-    date: document.getElementById('editDate').value,
-    amount: parseFloat(document.getElementById('editAmount').value),
+  const updated = {
+    date:     document.getElementById('editDate').value,
+    amount:   parseFloat(document.getElementById('editAmount').value),
     category: document.getElementById('editCategory').value,
-    nature: document.getElementById('editNature').value,
-    paidBy: document.getElementById('editPaidBy').value,
+    nature:   document.getElementById('editNature').value,
+    paidBy:   document.getElementById('editPaidBy').value,
   };
-  saveState();
+  state.expenses[idx] = { ...state.expenses[idx], ...updated };
+  if (currentUserId) window._fb.updateExpense(currentUserId, id, updated).catch(console.error);
   closeModal('editModal');
   renderExpensesTable();
   if (document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
@@ -714,9 +746,10 @@ function bulkDelete() {
   const count = selectedIds.size;
   if (count === 0) return;
   if (!confirm(`Delete ${count} selected expense${count !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+  const deletedIds = [...selectedIds];
   state.expenses = state.expenses.filter(e => !selectedIds.has(e.id));
   selectedIds.clear();
-  saveState();
+  if (currentUserId) window._fb.batchDeleteExpenses(currentUserId, deletedIds).catch(console.error);
   populateGlobalMonthFilter();
   renderExpensesTable();
   if (document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
@@ -751,16 +784,21 @@ function applyBulkEdit(e) {
   }
 
   let count = 0;
+  const firestoreUpdates = [];
   state.expenses.forEach(exp => {
     if (!selectedIds.has(exp.id)) return;
-    if (newCat) exp.category = newCat;
-    if (newNat) exp.nature = newNat;
-    if (newPay) exp.paidBy = newPay;
-    if (newDate) exp.date = newDate;
+    const data = {};
+    if (newCat)  { exp.category = newCat;  data.category = newCat; }
+    if (newNat)  { exp.nature   = newNat;  data.nature   = newNat; }
+    if (newPay)  { exp.paidBy   = newPay;  data.paidBy   = newPay; }
+    if (newDate) { exp.date     = newDate; data.date     = newDate; }
+    firestoreUpdates.push({ id: exp.id, data });
     count++;
   });
 
-  saveState();
+  if (currentUserId && firestoreUpdates.length) {
+    window._fb.batchUpdateExpenses(currentUserId, firestoreUpdates).catch(console.error);
+  }
   closeModal('bulkEditModal');
   clearSelection();
   renderExpensesTable();
@@ -894,6 +932,7 @@ function importData() {
 
   let imported = 0, skipped = 0;
   const now = Date.now();
+  const prevLength = state.expenses.length;
 
   importData_raw.forEach((row, idx) => {
     const rawDate = row[dateCol];
@@ -933,7 +972,11 @@ function importData() {
     imported++;
   });
 
-  saveState();
+  const newExpenses = state.expenses.slice(prevLength);
+  if (currentUserId && newExpenses.length) {
+    window._fb.batchAddExpenses(currentUserId, newExpenses).catch(console.error);
+  }
+  saveState(); // persist any new categories/natures added during import
   populateGlobalMonthFilter();
   populateSelects();
 
@@ -1060,6 +1103,9 @@ function handleJSONImport(e) {
           if (data.categories) state.categories = [...new Set([...state.categories, ...data.categories])];
           if (data.nature) state.nature = [...new Set([...state.nature, ...data.nature])];
           if (data.paidBy) state.paidBy = [...new Set([...state.paidBy, ...data.paidBy])];
+          if (currentUserId && newExps.length) {
+            window._fb.batchAddExpenses(currentUserId, newExps).catch(console.error);
+          }
           saveState();
           populateSelects();
           populateGlobalMonthFilter();
@@ -1078,6 +1124,7 @@ function clearAllData() {
       state.expenses = [];
       state.budgets = {};
       state.savedCharts = [];
+      if (currentUserId) window._fb.clearAllExpenses(currentUserId).catch(console.error);
       saveState();
       populateGlobalMonthFilter();
       showToast('All data cleared.', 'warning');
