@@ -4,9 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rupaiya - Personal Expense Tracker</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
@@ -16,484 +13,523 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
-<body class="light">
+<body class="dark">
 
-<!-- SIDEBAR -->
-<aside class="sidebar" id="sidebar" style="display:none">
-  <div class="sidebar-header">
-    <div class="logo">
-      <span class="logo-icon">₹</span>
-      <span class="logo-text">Rupaiya</span>
+<!-- ══════════════════════════════════════════════════════════
+     APP SHELL
+═══════════════════════════════════════════════════════════ -->
+<div class="app-shell" id="appShell" style="display:none">
+
+  <!-- ══════════ SIDEBAR ══════════ -->
+  <aside class="sidebar" id="sidebar">
+
+    <!-- Brand -->
+    <div class="sb-brand">
+      <div class="sb-logo">₹</div>
+      <span class="sb-name">Rupaiya</span>
+      <button class="sb-collapse" id="sidebarToggle" title="Collapse sidebar">&#8942;</button>
     </div>
-    <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">&#9776;</button>
-  </div>
-  <nav class="sidebar-nav">
-    <a href="#" class="nav-item active" data-page="dashboard">
-      <span class="nav-icon">&#127968;</span><span class="nav-label">Dashboard</span>
-    </a>
-    <a href="#" class="nav-item" data-page="expenses">
-      <span class="nav-icon">&#128176;</span><span class="nav-label">Expenses</span>
-    </a>
-    <a href="#" class="nav-item" data-page="add">
-      <span class="nav-icon">&#43;&#9711;</span><span class="nav-label">Add Expense</span>
-    </a>
-    <a href="#" class="nav-item" data-page="import">
-      <span class="nav-icon">&#128196;</span><span class="nav-label">Import Excel</span>
-    </a>
-    <a href="#" class="nav-item" data-page="analytics">
-      <span class="nav-icon">&#128202;</span><span class="nav-label">Analytics</span>
-    </a>
-    <a href="#" class="nav-item" data-page="custom-charts">
-      <span class="nav-icon">&#127912;</span><span class="nav-label">Custom Charts</span>
-    </a>
-    <a href="#" class="nav-item" data-page="settings">
-      <span class="nav-icon">&#9881;</span><span class="nav-label">Settings</span>
-    </a>
-  </nav>
-  <div class="sidebar-footer">
-    <button class="theme-toggle" id="themeToggle" title="Toggle dark/light mode">
-      <span id="themeIcon">&#127763;</span> <span class="nav-label">Dark Mode</span>
-    </button>
-  </div>
-</aside>
 
-<!-- MAIN CONTENT -->
-<main class="main-content" id="mainContent" style="display:none">
-
-  <!-- TOP BAR -->
-  <header class="topbar">
-    <div class="topbar-left">
-      <h1 class="page-title" id="pageTitle">Dashboard</h1>
+    <!-- Month snapshot -->
+    <div class="sb-snapshot">
+      <div class="sb-snap-label">This Month</div>
+      <div class="sb-snap-amount" id="sbMonthTotal">₹0</div>
+      <div class="sb-snap-sub" id="sbMonthCount">0 expenses</div>
+      <div class="sb-budget-row" id="sbBudgetRow">
+        <div class="sb-budget-bar">
+          <div class="sb-budget-fill" id="sbBudgetFill" style="width:0%"></div>
+        </div>
+        <div class="sb-budget-text" id="sbBudgetText"></div>
+      </div>
     </div>
-    <div class="topbar-right">
-      <div class="topbar-month-filter">
-        <select id="globalMonthFilter">
+
+    <!-- Mini donut -->
+    <div class="sb-donut-section">
+      <canvas id="sidebarDonut" width="70" height="70"></canvas>
+      <div class="sb-legend" id="sbLegend"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sb-nav">
+      <a href="#" class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">&#127968;</span><span class="nav-label">Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="expenses">
+        <span class="nav-icon">&#128176;</span><span class="nav-label">Expenses</span>
+      </a>
+      <a href="#" class="nav-item" data-page="add">
+        <span class="nav-icon">&#10011;</span><span class="nav-label">Add Expense</span>
+      </a>
+      <a href="#" class="nav-item" data-page="import">
+        <span class="nav-icon">&#128196;</span><span class="nav-label">Import Excel</span>
+      </a>
+      <a href="#" class="nav-item" data-page="analytics">
+        <span class="nav-icon">&#128202;</span><span class="nav-label">Analytics</span>
+      </a>
+      <a href="#" class="nav-item" data-page="custom-charts">
+        <span class="nav-icon">&#127912;</span><span class="nav-label">Custom Charts</span>
+      </a>
+      <a href="#" class="nav-item" data-page="settings">
+        <span class="nav-icon">&#9881;</span><span class="nav-label">Settings</span>
+      </a>
+    </nav>
+
+    <!-- Footer: user + theme -->
+    <div class="sb-footer">
+      <div class="sb-user">
+        <img class="user-avatar" id="userAvatar" src="" alt="" style="display:none" />
+        <div class="sb-user-initials" id="userInitials">U</div>
+        <div class="sb-user-info">
+          <span class="sb-user-name" id="userName">User</span>
+        </div>
+        <button class="sb-signout" onclick="window._fb.signOut()" title="Sign out">&#9210;</button>
+      </div>
+      <button class="sb-theme-btn" id="themeToggle">
+        <span class="sb-theme-icon" id="themeIcon">&#9728;&#65039;</span>
+        <span>Light Mode</span>
+      </button>
+    </div>
+  </aside>
+  <!-- /.sidebar -->
+
+  <!-- ══════════ MAIN AREA ══════════ -->
+  <div class="main-area" id="mainContent">
+
+    <!-- Top header bar -->
+    <header class="main-header">
+      <div class="mh-left">
+        <h1 class="page-title" id="pageTitle">Dashboard</h1>
+        <span class="current-date" id="currentDate"></span>
+      </div>
+      <div class="mh-right">
+        <select class="month-select" id="globalMonthFilter">
           <option value="all">All Time</option>
         </select>
+        <button class="btn btn-ghost btn-sm" onclick="exportAllExcel()">&#11015; Export</button>
+        <button class="btn btn-primary btn-sm" onclick="navigate('add')">&#43; Add</button>
       </div>
-      <button class="btn btn-primary" onclick="navigate('add')">+ Add Expense</button>
-      <button class="btn btn-outline" onclick="exportAllExcel()">&#11015; Export</button>
-      <div class="user-info" id="userInfo">
-        <img class="user-avatar" id="userAvatar" src="" alt="" style="display:none" />
-        <span class="user-name" id="userName"></span>
-        <button class="btn btn-outline btn-sm" onclick="window._fb.signOut()">Sign Out</button>
-      </div>
-    </div>
-  </header>
+    </header>
 
-  <!-- ============================= DASHBOARD PAGE ============================= -->
-  <section class="page active" id="page-dashboard">
-    <!-- Summary Cards -->
-    <div class="cards-grid">
-      <div class="card summary-card card-total">
-        <div class="card-label">Total Spent</div>
-        <div class="card-value" id="totalSpent">₹0</div>
-        <div class="card-sub" id="totalCount">0 transactions</div>
-      </div>
-      <div class="card summary-card card-month">
-        <div class="card-label">This Month</div>
-        <div class="card-value" id="monthSpent">₹0</div>
-        <div class="card-sub" id="monthChange"></div>
-      </div>
-      <div class="card summary-card card-avg">
-        <div class="card-label">Daily Average</div>
-        <div class="card-value" id="dailyAvg">₹0</div>
-        <div class="card-sub">this month</div>
-      </div>
-      <div class="card summary-card card-top">
-        <div class="card-label">Top Category</div>
-        <div class="card-value" id="topCategory">—</div>
-        <div class="card-sub" id="topCategoryAmt"></div>
-      </div>
-    </div>
+    <!-- Scrollable pages -->
+    <div class="pages-wrap">
 
-    <!-- Charts Row 1 -->
-    <div class="charts-row">
-      <div class="card chart-card wide">
-        <div class="chart-header">
-          <h3>Monthly Spending Trend</h3>
-          <select id="trendChartType" onchange="renderTrendChart()">
-            <option value="line">Line</option>
-            <option value="bar">Bar</option>
-          </select>
+      <!-- ═══════════════════ DASHBOARD PAGE ═══════════════════ -->
+      <section class="page active" id="page-dashboard">
+        <div class="cards-grid">
+          <div class="card summary-card card-total">
+            <div class="card-label">Total Spent</div>
+            <div class="card-value" id="totalSpent">₹0</div>
+            <div class="card-sub" id="totalCount">0 transactions</div>
+          </div>
+          <div class="card summary-card card-month">
+            <div class="card-label">This Month</div>
+            <div class="card-value" id="monthSpent">₹0</div>
+            <div class="card-sub" id="monthChange"></div>
+          </div>
+          <div class="card summary-card card-avg">
+            <div class="card-label">Daily Average</div>
+            <div class="card-value" id="dailyAvg">₹0</div>
+            <div class="card-sub">this month</div>
+          </div>
+          <div class="card summary-card card-top">
+            <div class="card-label">Top Category</div>
+            <div class="card-value" id="topCategory">—</div>
+            <div class="card-sub" id="topCategoryAmt"></div>
+          </div>
         </div>
-        <canvas id="trendChart"></canvas>
-      </div>
-      <div class="card chart-card">
-        <div class="chart-header"><h3>By Category</h3></div>
-        <canvas id="categoryChart"></canvas>
-      </div>
-    </div>
 
-    <!-- Charts Row 2 -->
-    <div class="charts-row">
-      <div class="card chart-card">
-        <div class="chart-header"><h3>Payment Method</h3></div>
-        <canvas id="paymentChart"></canvas>
-      </div>
-      <div class="card chart-card">
-        <div class="chart-header"><h3>Spending by Day of Week</h3></div>
-        <canvas id="dowChart"></canvas>
-      </div>
-      <div class="card chart-card">
-        <div class="chart-header"><h3>Nature Split</h3></div>
-        <canvas id="natureChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Recent Expenses -->
-    <div class="card">
-      <div class="chart-header">
-        <h3>Recent Expenses</h3>
-        <a href="#" onclick="navigate('expenses')" class="link-btn">View All</a>
-      </div>
-      <div id="recentExpenses" class="recent-list"></div>
-    </div>
-  </section>
-
-  <!-- ============================= EXPENSES PAGE ============================= -->
-  <section class="page" id="page-expenses">
-    <div class="card">
-      <!-- Filters -->
-      <div class="filter-bar">
-        <input type="text" id="searchInput" placeholder="&#128269; Search..." class="input filter-search" oninput="renderExpensesTable()" />
-        <select id="filterCategory" class="input" onchange="renderExpensesTable()">
-          <option value="">All Categories</option>
-        </select>
-        <select id="filterNature" class="input" onchange="renderExpensesTable()">
-          <option value="">All Nature</option>
-        </select>
-        <select id="filterPaidBy" class="input" onchange="renderExpensesTable()">
-          <option value="">All Paid By</option>
-        </select>
-        <input type="date" id="filterFrom" class="input" onchange="renderExpensesTable()" placeholder="From" />
-        <input type="date" id="filterTo" class="input" onchange="renderExpensesTable()" placeholder="To" />
-        <button class="btn btn-outline btn-sm" onclick="clearFilters()">Clear</button>
-      </div>
-
-      <!-- Bulk action bar -->
-      <div class="bulk-bar" id="bulkBar">
-        <span class="bulk-count"><span id="bulkCount">0</span> selected</span>
-        <div class="bulk-actions">
-          <button class="btn btn-sm bulk-btn-deselect" onclick="clearSelection()">&#10005; Deselect</button>
-          <button class="btn btn-sm bulk-btn-edit" onclick="openBulkEditModal()">&#9998; Edit</button>
-          <button class="btn btn-sm bulk-btn-delete" onclick="bulkDelete()">&#128465; Delete</button>
+        <div class="charts-row">
+          <div class="card chart-card wide">
+            <div class="chart-header">
+              <h3>Monthly Spending Trend</h3>
+              <select id="trendChartType" onchange="renderTrendChart()">
+                <option value="line">Line</option>
+                <option value="bar">Bar</option>
+              </select>
+            </div>
+            <canvas id="trendChart"></canvas>
+          </div>
+          <div class="card chart-card">
+            <div class="chart-header"><h3>By Category</h3></div>
+            <canvas id="categoryChart"></canvas>
+          </div>
         </div>
-      </div>
 
-      <!-- Table -->
-      <div class="table-container">
-        <table class="expense-table" id="expenseTable">
-          <thead>
-            <tr>
-              <th class="col-check">
-                <label class="custom-checkbox">
-                  <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" />
-                  <span class="checkmark"></span>
-                </label>
-              </th>
-              <th onclick="sortTable('date')">Date <span class="sort-icon">&#8597;</span></th>
-              <th onclick="sortTable('category')">Category <span class="sort-icon">&#8597;</span></th>
-              <th onclick="sortTable('nature')">Nature <span class="sort-icon">&#8597;</span></th>
-              <th onclick="sortTable('amount')">Amount <span class="sort-icon">&#8597;</span></th>
-              <th onclick="sortTable('paidBy')">Paid By <span class="sort-icon">&#8597;</span></th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="expenseTableBody"></tbody>
-        </table>
-      </div>
-      <div class="table-footer">
-        <span id="tableCount">0 records</span>
-        <span id="tableTotal" class="table-total"></span>
-      </div>
-    </div>
-  </section>
+        <div class="charts-row">
+          <div class="card chart-card">
+            <div class="chart-header"><h3>Payment Method</h3></div>
+            <canvas id="paymentChart"></canvas>
+          </div>
+          <div class="card chart-card">
+            <div class="chart-header"><h3>Spending by Day of Week</h3></div>
+            <canvas id="dowChart"></canvas>
+          </div>
+          <div class="card chart-card">
+            <div class="chart-header"><h3>Nature Split</h3></div>
+            <canvas id="natureChart"></canvas>
+          </div>
+        </div>
 
-  <!-- ============================= ADD EXPENSE PAGE ============================= -->
-  <section class="page" id="page-add">
-    <div class="card form-card">
-      <h2 id="formTitle">Add New Expense</h2>
-      <input type="hidden" id="editId" />
-      <form id="expenseForm" onsubmit="saveExpense(event)">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Date *</label>
-            <input type="date" id="expDate" class="input" required />
+        <div class="card">
+          <div class="chart-header">
+            <h3>Recent Expenses</h3>
+            <a href="#" onclick="navigate('expenses')" class="link-btn">View All</a>
           </div>
-          <div class="form-group">
-            <label>Amount (₹) *</label>
-            <input type="number" id="expAmount" class="input" placeholder="0.00" step="0.01" min="0.01" required />
+          <div id="recentExpenses" class="recent-list"></div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════ EXPENSES PAGE ═══════════════════ -->
+      <section class="page" id="page-expenses">
+        <div class="card">
+          <div class="filter-bar">
+            <input type="text" id="searchInput" placeholder="&#128269; Search..." class="input filter-search" oninput="renderExpensesTable()" />
+            <select id="filterCategory" class="input" onchange="renderExpensesTable()">
+              <option value="">All Categories</option>
+            </select>
+            <select id="filterNature" class="input" onchange="renderExpensesTable()">
+              <option value="">All Nature</option>
+            </select>
+            <select id="filterPaidBy" class="input" onchange="renderExpensesTable()">
+              <option value="">All Paid By</option>
+            </select>
+            <input type="date" id="filterFrom" class="input" onchange="renderExpensesTable()" />
+            <input type="date" id="filterTo" class="input" onchange="renderExpensesTable()" />
+            <button class="btn btn-outline btn-sm" onclick="clearFilters()">Clear</button>
           </div>
-          <div class="form-group">
-            <label>Category *</label>
-            <input type="text" id="expCategory" class="input" list="categoryList" placeholder="Select or type new…" required autocomplete="off" />
-            <datalist id="categoryList"></datalist>
-            <span class="field-hint">Type anything — new entries are saved automatically</span>
+
+          <div class="bulk-bar" id="bulkBar">
+            <span class="bulk-count"><span id="bulkCount">0</span> selected</span>
+            <div class="bulk-actions">
+              <button class="btn btn-sm bulk-btn-deselect" onclick="clearSelection()">&#10005; Deselect</button>
+              <button class="btn btn-sm bulk-btn-edit" onclick="openBulkEditModal()">&#9998; Edit</button>
+              <button class="btn btn-sm bulk-btn-delete" onclick="bulkDelete()">&#128465; Delete</button>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Nature *</label>
-            <input type="text" id="expNature" class="input" list="natureList" placeholder="Select or type new…" required autocomplete="off" />
-            <datalist id="natureList"></datalist>
-            <span class="field-hint">Type anything — new entries are saved automatically</span>
+
+          <div class="table-container">
+            <table class="expense-table" id="expenseTable">
+              <thead>
+                <tr>
+                  <th class="col-check">
+                    <label class="custom-checkbox">
+                      <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" />
+                      <span class="checkmark"></span>
+                    </label>
+                  </th>
+                  <th onclick="sortTable('date')">Date <span class="sort-icon">&#8597;</span></th>
+                  <th onclick="sortTable('category')">Category <span class="sort-icon">&#8597;</span></th>
+                  <th onclick="sortTable('nature')">Nature <span class="sort-icon">&#8597;</span></th>
+                  <th onclick="sortTable('amount')">Amount <span class="sort-icon">&#8597;</span></th>
+                  <th onclick="sortTable('paidBy')">Paid By <span class="sort-icon">&#8597;</span></th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="expenseTableBody"></tbody>
+            </table>
           </div>
-          <div class="form-group form-group-full">
-            <label>Paid By *</label>
-            <select id="expPaidBy" class="input" required>
-              <option value="">Select Payment Method</option>
+          <div class="table-footer">
+            <span id="tableCount">0 records</span>
+            <span id="tableTotal" class="table-total"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════ ADD EXPENSE PAGE ═══════════════════ -->
+      <section class="page" id="page-add">
+        <div class="card form-card">
+          <h2 id="formTitle">Add New Expense</h2>
+          <input type="hidden" id="editId" />
+          <form id="expenseForm" onsubmit="saveExpense(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Date *</label>
+                <input type="date" id="expDate" class="input" required />
+              </div>
+              <div class="form-group">
+                <label>Amount (₹) *</label>
+                <input type="number" id="expAmount" class="input" placeholder="0.00" step="0.01" min="0.01" required />
+              </div>
+              <div class="form-group">
+                <label>Category *</label>
+                <input type="text" id="expCategory" class="input" list="categoryList" placeholder="Select or type new…" required autocomplete="off" />
+                <datalist id="categoryList"></datalist>
+                <span class="field-hint">Type anything — new entries are saved automatically</span>
+              </div>
+              <div class="form-group">
+                <label>Nature *</label>
+                <input type="text" id="expNature" class="input" list="natureList" placeholder="Select or type new…" required autocomplete="off" />
+                <datalist id="natureList"></datalist>
+                <span class="field-hint">Type anything — new entries are saved automatically</span>
+              </div>
+              <div class="form-group form-group-full">
+                <label>Paid By *</label>
+                <select id="expPaidBy" class="input" required>
+                  <option value="">Select Payment Method</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">Save Expense</button>
+              <button type="button" class="btn btn-outline" onclick="resetForm()">Reset</button>
+            </div>
+          </form>
+        </div>
+        <div class="card quick-stats-card">
+          <h3>Today's Quick Stats</h3>
+          <div id="todayStats" class="today-stats"></div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════ IMPORT PAGE ═══════════════════ -->
+      <section class="page" id="page-import">
+        <div class="card">
+          <h2>Import from Excel</h2>
+          <p class="hint">Upload an .xlsx or .csv file. We'll try to auto-map columns automatically.</p>
+
+          <div class="drop-zone" id="dropZone">
+            <div class="drop-icon">&#128196;</div>
+            <p>Drag &amp; drop your Excel / CSV file here</p>
+            <p class="hint">or</p>
+            <label class="btn btn-primary">
+              Browse File
+              <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileUpload(event)" />
+            </label>
+            <p class="hint mt">Supported: .xlsx, .xls, .csv</p>
+          </div>
+
+          <div id="mappingSection" style="display:none">
+            <h3 style="margin-top:2rem">Column Mapping</h3>
+            <p class="hint">Map your Excel columns to the expense fields.</p>
+            <div class="mapping-grid" id="mappingGrid"></div>
+            <div class="preview-section">
+              <h4>Preview (first 5 rows)</h4>
+              <div class="table-container" id="previewContainer"></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" onclick="importData()">&#10003; Import Data</button>
+              <button class="btn btn-outline" onclick="cancelImport()">Cancel</button>
+            </div>
+          </div>
+
+          <div id="importResult" style="display:none" class="import-result"></div>
+
+          <div class="template-section">
+            <h3>Download Template</h3>
+            <p class="hint">Use our template for easy importing.</p>
+            <button class="btn btn-outline" onclick="downloadTemplate()">&#11015; Download Excel Template</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════ ANALYTICS PAGE ═══════════════════ -->
+      <section class="page" id="page-analytics">
+        <div class="cards-grid" id="insightCards"></div>
+
+        <div class="card">
+          <div class="chart-header"><h3>Spending Heatmap (Last 6 Months)</h3></div>
+          <div id="heatmapContainer" class="heatmap-container"></div>
+        </div>
+
+        <div class="card chart-card-full">
+          <div class="chart-header">
+            <h3>Category Spending Over Months</h3>
+            <select id="catMonthChartType" onchange="renderCatMonthChart()">
+              <option value="bar">Stacked Bar</option>
+              <option value="line">Line</option>
             </select>
           </div>
+          <canvas id="catMonthChart"></canvas>
         </div>
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">Save Expense</button>
-          <button type="button" class="btn btn-outline" onclick="resetForm()">Reset</button>
-        </div>
-      </form>
-    </div>
 
-    <!-- Quick stats -->
-    <div class="card quick-stats-card">
-      <h3>Today's Quick Stats</h3>
-      <div id="todayStats" class="today-stats"></div>
-    </div>
-  </section>
-
-  <!-- ============================= IMPORT PAGE ============================= -->
-  <section class="page" id="page-import">
-    <div class="card">
-      <h2>Import from Excel</h2>
-      <p class="hint">Upload an .xlsx or .csv file. We'll try to auto-map columns automatically.</p>
-
-      <div class="drop-zone" id="dropZone">
-        <div class="drop-icon">&#128196;</div>
-        <p>Drag &amp; drop your Excel / CSV file here</p>
-        <p class="hint">or</p>
-        <label class="btn btn-primary">
-          Browse File
-          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileUpload(event)" />
-        </label>
-        <p class="hint mt">Supported: .xlsx, .xls, .csv</p>
-      </div>
-
-      <!-- Column Mapping -->
-      <div id="mappingSection" style="display:none">
-        <h3 style="margin-top:2rem">Column Mapping</h3>
-        <p class="hint">Map your Excel columns to the expense fields.</p>
-        <div class="mapping-grid" id="mappingGrid"></div>
-        <div class="preview-section">
-          <h4>Preview (first 5 rows)</h4>
-          <div class="table-container" id="previewContainer"></div>
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-primary" onclick="importData()">&#10003; Import Data</button>
-          <button class="btn btn-outline" onclick="cancelImport()">Cancel</button>
-        </div>
-      </div>
-
-      <!-- Import Result -->
-      <div id="importResult" style="display:none" class="import-result"></div>
-
-      <!-- Download template -->
-      <div class="template-section">
-        <h3>Download Template</h3>
-        <p class="hint">Use our template for easy importing.</p>
-        <button class="btn btn-outline" onclick="downloadTemplate()">&#11015; Download Excel Template</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================= ANALYTICS PAGE ============================= -->
-  <section class="page" id="page-analytics">
-
-    <!-- Insight Cards -->
-    <div class="cards-grid" id="insightCards"></div>
-
-    <!-- Heatmap -->
-    <div class="card">
-      <div class="chart-header"><h3>Spending Heatmap (Last 6 Months)</h3></div>
-      <div id="heatmapContainer" class="heatmap-container"></div>
-    </div>
-
-    <!-- Category vs Month -->
-    <div class="card chart-card-full">
-      <div class="chart-header">
-        <h3>Category Spending Over Months</h3>
-        <select id="catMonthChartType" onchange="renderCatMonthChart()">
-          <option value="bar">Stacked Bar</option>
-          <option value="line">Line</option>
-        </select>
-      </div>
-      <canvas id="catMonthChart"></canvas>
-    </div>
-
-    <!-- Top Expenses -->
-    <div class="charts-row">
-      <div class="card chart-card wide">
-        <div class="chart-header"><h3>Top 10 Expenses</h3></div>
-        <canvas id="topExpensesChart"></canvas>
-      </div>
-      <div class="card chart-card">
-        <div class="chart-header"><h3>Paid By Distribution</h3></div>
-        <canvas id="paidByAnalyticsChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Budget Tracker -->
-    <div class="card">
-      <div class="chart-header">
-        <h3>Category Budget Tracker</h3>
-        <button class="btn btn-sm btn-outline" onclick="openBudgetModal()">Set Budgets</button>
-      </div>
-      <div id="budgetBars" class="budget-bars"></div>
-    </div>
-
-  </section>
-
-  <!-- ============================= CUSTOM CHARTS PAGE ============================= -->
-  <section class="page" id="page-custom-charts">
-    <div class="card">
-      <h2>Custom Chart Builder</h2>
-      <p class="hint">Create your own charts by choosing what to visualize.</p>
-
-      <div class="custom-chart-builder">
-        <div class="builder-controls">
-          <div class="form-group">
-            <label>Chart Type</label>
-            <select id="ccType" class="input" onchange="updateCustomChart()">
-              <option value="bar">Bar Chart</option>
-              <option value="line">Line Chart</option>
-              <option value="pie">Pie Chart</option>
-              <option value="doughnut">Doughnut Chart</option>
-              <option value="radar">Radar Chart</option>
-              <option value="polarArea">Polar Area</option>
-            </select>
+        <div class="charts-row">
+          <div class="card chart-card wide">
+            <div class="chart-header"><h3>Top 10 Expenses</h3></div>
+            <canvas id="topExpensesChart"></canvas>
           </div>
-          <div class="form-group">
-            <label>Group By (X Axis)</label>
-            <select id="ccGroupBy" class="input" onchange="updateCustomChart()">
-              <option value="category">Category</option>
-              <option value="nature">Nature</option>
-              <option value="paidBy">Paid By</option>
-              <option value="month">Month</option>
-              <option value="week">Week</option>
-              <option value="dow">Day of Week</option>
-              <option value="description">Description</option>
-            </select>
+          <div class="card chart-card">
+            <div class="chart-header"><h3>Paid By Distribution</h3></div>
+            <canvas id="paidByAnalyticsChart"></canvas>
           </div>
-          <div class="form-group">
-            <label>Measure</label>
-            <select id="ccMeasure" class="input" onchange="updateCustomChart()">
-              <option value="sum">Total Amount</option>
-              <option value="count">Count of Transactions</option>
-              <option value="avg">Average Amount</option>
-              <option value="max">Max Transaction</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Filter Category</label>
-            <select id="ccFilterCategory" class="input" onchange="updateCustomChart()">
-              <option value="">All</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Filter Nature</label>
-            <select id="ccFilterNature" class="input" onchange="updateCustomChart()">
-              <option value="">All</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Date From</label>
-            <input type="date" id="ccDateFrom" class="input" onchange="updateCustomChart()" />
-          </div>
-          <div class="form-group">
-            <label>Date To</label>
-            <input type="date" id="ccDateTo" class="input" onchange="updateCustomChart()" />
-          </div>
-          <div class="form-group">
-            <label>Color Palette</label>
-            <select id="ccPalette" class="input" onchange="updateCustomChart()">
-              <option value="vibrant">Vibrant</option>
-              <option value="pastel">Pastel</option>
-              <option value="warm">Warm</option>
-              <option value="cool">Cool</option>
-              <option value="mono">Monochrome</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Chart Title</label>
-            <input type="text" id="ccTitle" class="input" placeholder="My Chart" oninput="updateCustomChart()" />
-          </div>
-          <button class="btn btn-primary" onclick="saveCustomChart()">&#128190; Save Chart</button>
-          <button class="btn btn-outline" onclick="downloadCustomChart()">&#11015; Download PNG</button>
         </div>
-        <div class="builder-preview">
-          <canvas id="customChart"></canvas>
-          <p class="hint center" id="customChartHint">Configure chart options and it will render here.</p>
-        </div>
-      </div>
-    </div>
 
-    <!-- Saved Charts -->
-    <div class="card" id="savedChartsSection" style="display:none">
-      <h3>Saved Charts</h3>
-      <div id="savedChartsGrid" class="saved-charts-grid"></div>
-    </div>
-  </section>
+        <div class="card">
+          <div class="chart-header">
+            <h3>Category Budget Tracker</h3>
+            <button class="btn btn-sm btn-outline" onclick="openBudgetModal()">Set Budgets</button>
+          </div>
+          <div id="budgetBars" class="budget-bars"></div>
+        </div>
+      </section>
 
-  <!-- ============================= SETTINGS PAGE ============================= -->
-  <section class="page" id="page-settings">
-    <div class="settings-grid">
-      <div class="card">
-        <h3>Manage Categories</h3>
-        <div id="categoriesList" class="tags-list"></div>
-        <div class="add-tag-row">
-          <input type="text" id="newCategory" class="input" placeholder="New category..." />
-          <button class="btn btn-primary btn-sm" onclick="addCategory()">Add</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Manage Nature Types</h3>
-        <div id="natureList" class="tags-list"></div>
-        <div class="add-tag-row">
-          <input type="text" id="newNature" class="input" placeholder="New nature..." />
-          <button class="btn btn-primary btn-sm" onclick="addNature()">Add</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Manage Payment Methods</h3>
-        <div id="paidByList" class="tags-list"></div>
-        <div class="add-tag-row">
-          <input type="text" id="newPaidBy" class="input" placeholder="New payment method..." />
-          <button class="btn btn-primary btn-sm" onclick="addPaidBy()">Add</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Data Management</h3>
-        <div class="settings-actions">
-          <button class="btn btn-outline" onclick="exportAllExcel()">&#11015; Export All to Excel</button>
-          <button class="btn btn-outline" onclick="exportJSON()">&#11015; Export as JSON</button>
-          <button class="btn btn-outline" onclick="importJSON()">&#11014; Import from JSON</button>
-          <button class="btn btn-danger" onclick="clearAllData()">&#128465; Clear All Data</button>
-        </div>
-        <input type="file" id="jsonImportFile" accept=".json" style="display:none" onchange="handleJSONImport(event)" />
-      </div>
-      <div class="card">
-        <h3>About Rupaiya</h3>
-        <p class="hint">Version 1.0.0 &bull; Free Forever &bull; Runs 100% locally in your browser</p>
-        <p class="hint">All your data is stored securely on your device. Nothing is sent to any server.</p>
-        <div class="tech-badges">
-          <span class="badge">Offline First</span>
-          <span class="badge">Privacy First</span>
-          <span class="badge">No Ads</span>
-          <span class="badge">Free Forever</span>
-        </div>
-      </div>
-    </div>
-  </section>
+      <!-- ═══════════════════ CUSTOM CHARTS PAGE ═══════════════════ -->
+      <section class="page" id="page-custom-charts">
+        <div class="card">
+          <h2>Custom Chart Builder</h2>
+          <p class="hint">Create your own charts by choosing what to visualize.</p>
 
-</main>
+          <div class="custom-chart-builder">
+            <div class="builder-controls">
+              <div class="form-group">
+                <label>Chart Type</label>
+                <select id="ccType" class="input" onchange="updateCustomChart()">
+                  <option value="bar">Bar Chart</option>
+                  <option value="line">Line Chart</option>
+                  <option value="pie">Pie Chart</option>
+                  <option value="doughnut">Doughnut Chart</option>
+                  <option value="radar">Radar Chart</option>
+                  <option value="polarArea">Polar Area</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Group By (X Axis)</label>
+                <select id="ccGroupBy" class="input" onchange="updateCustomChart()">
+                  <option value="category">Category</option>
+                  <option value="nature">Nature</option>
+                  <option value="paidBy">Paid By</option>
+                  <option value="month">Month</option>
+                  <option value="week">Week</option>
+                  <option value="dow">Day of Week</option>
+                  <option value="description">Description</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Measure</label>
+                <select id="ccMeasure" class="input" onchange="updateCustomChart()">
+                  <option value="sum">Total Amount</option>
+                  <option value="count">Count of Transactions</option>
+                  <option value="avg">Average Amount</option>
+                  <option value="max">Max Transaction</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Filter Category</label>
+                <select id="ccFilterCategory" class="input" onchange="updateCustomChart()">
+                  <option value="">All</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Filter Nature</label>
+                <select id="ccFilterNature" class="input" onchange="updateCustomChart()">
+                  <option value="">All</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Date From</label>
+                <input type="date" id="ccDateFrom" class="input" onchange="updateCustomChart()" />
+              </div>
+              <div class="form-group">
+                <label>Date To</label>
+                <input type="date" id="ccDateTo" class="input" onchange="updateCustomChart()" />
+              </div>
+              <div class="form-group">
+                <label>Color Palette</label>
+                <select id="ccPalette" class="input" onchange="updateCustomChart()">
+                  <option value="vibrant">Vibrant</option>
+                  <option value="pastel">Pastel</option>
+                  <option value="warm">Warm</option>
+                  <option value="cool">Cool</option>
+                  <option value="mono">Monochrome</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Chart Title</label>
+                <input type="text" id="ccTitle" class="input" placeholder="My Chart" oninput="updateCustomChart()" />
+              </div>
+              <button class="btn btn-primary" onclick="saveCustomChart()">&#128190; Save Chart</button>
+              <button class="btn btn-outline" onclick="downloadCustomChart()">&#11015; Download PNG</button>
+            </div>
+            <div class="builder-preview">
+              <canvas id="customChart"></canvas>
+              <p class="hint center" id="customChartHint">Configure chart options and it will render here.</p>
+            </div>
+          </div>
+        </div>
 
-<!-- MODALS -->
+        <div class="card" id="savedChartsSection" style="display:none">
+          <h3>Saved Charts</h3>
+          <div id="savedChartsGrid" class="saved-charts-grid"></div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════ SETTINGS PAGE ═══════════════════ -->
+      <section class="page" id="page-settings">
+        <div class="settings-grid">
+          <div class="card">
+            <h3>Manage Categories</h3>
+            <div id="categoriesList" class="tags-list"></div>
+            <div class="add-tag-row">
+              <input type="text" id="newCategory" class="input" placeholder="New category..." />
+              <button class="btn btn-primary btn-sm" onclick="addCategory()">Add</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Manage Nature Types</h3>
+            <div id="natureTagsList" class="tags-list"></div>
+            <div class="add-tag-row">
+              <input type="text" id="newNature" class="input" placeholder="New nature..." />
+              <button class="btn btn-primary btn-sm" onclick="addNature()">Add</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Manage Payment Methods</h3>
+            <div id="paidByList" class="tags-list"></div>
+            <div class="add-tag-row">
+              <input type="text" id="newPaidBy" class="input" placeholder="New payment method..." />
+              <button class="btn btn-primary btn-sm" onclick="addPaidBy()">Add</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Data Management</h3>
+            <div class="settings-actions">
+              <button class="btn btn-outline" onclick="exportAllExcel()">&#11015; Export All to Excel</button>
+              <button class="btn btn-outline" onclick="exportJSON()">&#11015; Export as JSON</button>
+              <button class="btn btn-outline" onclick="importJSON()">&#11014; Import from JSON</button>
+              <button class="btn btn-danger" onclick="clearAllData()">&#128465; Clear All Data</button>
+            </div>
+            <input type="file" id="jsonImportFile" accept=".json" style="display:none" onchange="handleJSONImport(event)" />
+          </div>
+          <div class="card">
+            <h3>About Rupaiya</h3>
+            <p class="hint">Version 2.0.0 &bull; Firebase Sync &bull; Premium Fintech UI</p>
+            <p class="hint">Your data syncs securely across all devices via Firebase.</p>
+            <div class="tech-badges">
+              <span class="badge">Cloud Sync</span>
+              <span class="badge">Privacy First</span>
+              <span class="badge">No Ads</span>
+              <span class="badge">Free Forever</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /.pages-wrap -->
+  </div><!-- /.main-area -->
+</div><!-- /.app-shell -->
+
+<!-- ══════════ BOTTOM NAV (mobile) ══════════ -->
+<nav class="bottom-nav">
+  <div class="bnav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+    <span class="bnav-icon">&#127968;</span><span>Home</span>
+  </div>
+  <div class="bnav-item" data-page="expenses" onclick="navigate('expenses')">
+    <span class="bnav-icon">&#128176;</span><span>Expenses</span>
+  </div>
+  <div class="bnav-item" data-page="add" onclick="navigate('add')">
+    <span class="bnav-icon">&#10011;</span><span>Add</span>
+  </div>
+  <div class="bnav-item" data-page="analytics" onclick="navigate('analytics')">
+    <span class="bnav-icon">&#128202;</span><span>Analytics</span>
+  </div>
+  <div class="bnav-item" data-page="settings" onclick="navigate('settings')">
+    <span class="bnav-icon">&#9881;</span><span>Settings</span>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════════════════════ -->
+
 <!-- Edit Expense Modal -->
 <div class="modal-overlay" id="editModal" style="display:none">
   <div class="modal">
@@ -592,7 +628,7 @@
 <!-- Toast Notification -->
 <div id="toast" class="toast"></div>
 
-<!-- Loading Overlay (shown while Firebase resolves auth state) -->
+<!-- Loading Overlay -->
 <div id="loadingOverlay" class="auth-overlay">
   <div class="auth-spinner-wrap">
     <div class="auth-spinner"></div>
@@ -603,13 +639,18 @@
 <!-- Login Overlay -->
 <div id="loginOverlay" class="auth-overlay" style="display:none">
   <div class="login-card">
-    <div class="login-logo">
-      <span class="logo-icon" style="width:44px;height:44px;font-size:1.4rem;border-radius:12px">₹</span>
+    <div class="login-logo-wrap">
+      <div class="login-logo">₹</div>
     </div>
     <h1 class="login-title">Rupaiya</h1>
-    <p class="login-sub">Your personal expense tracker</p>
+    <p class="login-sub">Your personal expense tracker.<br>Sign in to sync across all devices.</p>
     <button class="btn-google" onclick="window._fb.signIn()">
-      <svg width="18" height="18" viewBox="0 0 48 48" style="flex-shrink:0"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <svg width="18" height="18" viewBox="0 0 48 48" style="flex-shrink:0">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
       Sign in with Google
     </button>
     <p class="login-note">Only your account can access your data.</p>

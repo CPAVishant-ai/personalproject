@@ -62,23 +62,28 @@ document.addEventListener('firebase:authstate', async (e) => {
   if (user) {
     currentUserId = user.uid;
 
-    // Show user info in topbar
+    // Show user info in sidebar footer
     const avatar = document.getElementById('userAvatar');
-    if (user.photoURL) { avatar.src = user.photoURL; avatar.style.display = 'block'; }
+    const initials = document.getElementById('userInitials');
+    if (user.photoURL) {
+      avatar.src = user.photoURL;
+      avatar.style.display = 'block';
+      if (initials) initials.style.display = 'none';
+    } else if (initials) {
+      initials.textContent = (user.displayName || user.email || 'U')[0].toUpperCase();
+    }
     document.getElementById('userName').textContent = user.displayName || user.email || 'User';
 
-    // Show app, hide login
+    // Show app shell, hide login
     document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('mainContent').style.display = '';
-    document.getElementById('sidebar').style.display = '';
+    document.getElementById('appShell').style.display = '';
 
     await loadFromFirestore();
     initApp();
   } else {
     currentUserId = null;
     document.getElementById('loginOverlay').style.display = 'flex';
-    document.getElementById('mainContent').style.display = 'none';
-    document.getElementById('sidebar').style.display = 'none';
+    document.getElementById('appShell').style.display = 'none';
   }
 });
 
@@ -104,6 +109,15 @@ function initApp() {
   navigate('dashboard');
   setDefaultDate();
   initDropZone();
+  renderSidebarStats();
+
+  // Set current date in header
+  const dateEl = document.getElementById('currentDate');
+  if (dateEl) {
+    const now = new Date();
+    dateEl.textContent = now.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
   document.getElementById('globalMonthFilter').addEventListener('change', () => {
     refreshCurrentPage();
   });
@@ -122,16 +136,88 @@ function saveState() {
   }).catch(e => console.error('Firestore settings save error:', e));
 }
 
+/* ============================================================ SIDEBAR STATS */
+function renderSidebarStats() {
+  const now = new Date();
+  const curMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthExp = state.expenses.filter(e => e.date.startsWith(curMonth));
+  const monthTotal = monthExp.reduce((s, e) => s + e.amount, 0);
+
+  const sbTotal = document.getElementById('sbMonthTotal');
+  const sbCount = document.getElementById('sbMonthCount');
+  if (sbTotal) sbTotal.textContent = formatINR(monthTotal);
+  if (sbCount) sbCount.textContent = `${monthExp.length} expense${monthExp.length !== 1 ? 's' : ''}`;
+
+  renderSidebarDonut();
+}
+
+function renderSidebarDonut() {
+  const canvas = document.getElementById('sidebarDonut');
+  if (!canvas) return;
+
+  const now = new Date();
+  const curMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const filtered = state.expenses.filter(e => e.date.startsWith(curMonth));
+
+  destroyChart('sidebarDonut');
+
+  if (!filtered.length) {
+    const legend = document.getElementById('sbLegend');
+    if (legend) legend.innerHTML = '';
+    return;
+  }
+
+  const byCat = groupBy(filtered, 'category');
+  const entries = Object.entries(byCat)
+    .map(([cat, exps]) => ({ cat, total: exps.reduce((s, e) => s + e.amount, 0) }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+  const total = entries.reduce((s, e) => s + e.total, 0);
+
+  chartInstances['sidebarDonut'] = new Chart(canvas.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: entries.map(e => e.cat),
+      datasets: [{
+        data: entries.map(e => e.total),
+        backgroundColor: entries.map(e => getCategoryColor(e.cat)),
+        borderWidth: 0,
+        hoverOffset: 4,
+      }]
+    },
+    options: {
+      responsive: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      cutout: '72%',
+    }
+  });
+
+  const legend = document.getElementById('sbLegend');
+  if (legend) {
+    legend.innerHTML = entries.slice(0, 4).map(e => `
+      <div class="sb-legend-item">
+        <div class="sb-legend-dot" style="background:${getCategoryColor(e.cat)}"></div>
+        <span class="sb-legend-cat">${e.cat}</span>
+        <span class="sb-legend-pct">${((e.total / total) * 100).toFixed(0)}%</span>
+      </div>
+    `).join('');
+  }
+}
+
 /* ============================================================ NAVIGATION */
 function navigate(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.bnav-item').forEach(n => n.classList.remove('active'));
 
   const pageEl = document.getElementById('page-' + page);
   if (pageEl) pageEl.classList.add('active');
 
   const navEl = document.querySelector(`.nav-item[data-page="${page}"]`);
   if (navEl) navEl.classList.add('active');
+
+  const bnavEl = document.querySelector(`.bnav-item[data-page="${page}"]`);
+  if (bnavEl) bnavEl.classList.add('active');
 
   const titles = {
     dashboard: 'Dashboard', expenses: 'Expenses', add: 'Add Expense',
@@ -167,16 +253,16 @@ function refreshCurrentPage(forcePage) {
 
 /* ============================================================ SIDEBAR TOGGLE */
 function initSidebar() {
-  document.getElementById('sidebarToggle').addEventListener('click', () => {
+  const btn = document.getElementById('sidebarToggle');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('collapsed');
-    document.getElementById('mainContent').classList.toggle('collapsed');
-    document.querySelector('.topbar').classList.toggle('collapsed');
   });
 }
 
 /* ============================================================ THEME */
 function initTheme() {
-  const saved = localStorage.getItem('rupaiya_theme') || 'light';
+  const saved = localStorage.getItem('rupaiya_theme') || 'dark';
   setTheme(saved);
   document.getElementById('themeToggle').addEventListener('click', () => {
     const current = document.body.classList.contains('dark') ? 'dark' : 'light';
@@ -274,6 +360,7 @@ function saveExpense(e) {
   saveState(); // persists any new category/nature added above
   populateGlobalMonthFilter();
   populateSelects();
+  renderSidebarStats();
   if (newAdded.length) {
     showToast(`Expense added! New ${newAdded.join(' & ')} saved.`, 'success');
   } else {
@@ -302,6 +389,7 @@ function deleteExpense(id) {
   if (currentUserId) window._fb.deleteExpense(currentUserId, id).catch(console.error);
   renderExpensesTable();
   populateGlobalMonthFilter();
+  renderSidebarStats();
   showToast('Expense deleted.', 'warning');
 }
 
@@ -339,6 +427,7 @@ function updateExpense(e) {
   closeModal('editModal');
   renderExpensesTable();
   if (document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+  renderSidebarStats();
   showToast('Expense updated!', 'success');
 }
 
@@ -753,6 +842,7 @@ function bulkDelete() {
   populateGlobalMonthFilter();
   renderExpensesTable();
   if (document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+  renderSidebarStats();
   showToast(`${count} expense${count !== 1 ? 's' : ''} deleted.`, 'warning');
 }
 
@@ -803,6 +893,7 @@ function applyBulkEdit(e) {
   clearSelection();
   renderExpensesTable();
   if (document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+  renderSidebarStats();
   showToast(`${count} expense${count !== 1 ? 's' : ''} updated!`, 'success');
 }
 
@@ -979,6 +1070,7 @@ function importData() {
   saveState(); // persist any new categories/natures added during import
   populateGlobalMonthFilter();
   populateSelects();
+  renderSidebarStats();
 
   const resultEl = document.getElementById('importResult');
   resultEl.className = 'import-result ' + (imported > 0 ? 'success' : 'error');
@@ -1109,6 +1201,7 @@ function handleJSONImport(e) {
           saveState();
           populateSelects();
           populateGlobalMonthFilter();
+          renderSidebarStats();
           showToast(`${newExps.length} new expenses imported!`, 'success');
         }
       } else showToast('Invalid backup file.', 'error');
@@ -1127,6 +1220,7 @@ function clearAllData() {
       if (currentUserId) window._fb.clearAllExpenses(currentUserId).catch(console.error);
       saveState();
       populateGlobalMonthFilter();
+      renderSidebarStats();
       showToast('All data cleared.', 'warning');
       navigate('dashboard');
     }
@@ -1602,7 +1696,7 @@ function deleteSavedChart(id) {
 /* ============================================================ SETTINGS */
 function renderSettings() {
   renderTagList('categoriesList', state.categories, 'category');
-  renderTagList('natureList', state.nature, 'nature');
+  renderTagList('natureTagsList', state.nature, 'nature');
   renderTagList('paidByList', state.paidBy, 'paidby');
 }
 
