@@ -3,10 +3,10 @@
 //  Get it from: Firebase Console → Project Settings → Your Apps → Web app
 // =====================================================================
 export const firebaseConfig = {
-  apiKey:            "PASTE_YOUR_API_KEY",
-  authDomain:        "PASTE_YOUR_AUTH_DOMAIN",
-  projectId:         "PASTE_YOUR_PROJECT_ID",
-  storageBucket:     "PASTE_YOUR_STORAGE_BUCKET",
-  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
-  appId:             "PASTE_YOUR_APP_ID",
+  apiKey:            "AIzaSyBcnZ7WlgWLmPyPtnCZh8XhAzgkc_Y9iyU",
+  authDomain:        "expense-tracker-da4c7.firebaseapp.com",
+  projectId:         "expense-tracker-da4c7",
+  storageBucket:     "expense-tracker-da4c7.firebasestorage.app",
+  messagingSenderId: "472558800983",
+  appId:             "1:472558800983:web:a037c4ed0ae1b189f2d312",
 };

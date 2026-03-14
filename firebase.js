@@ -3,14 +3,14 @@
 //  Exposes window._fb for use by app.js (non-module global scope)
 // =====================================================================
 
-import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
 import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
   onAuthStateChanged,
-} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+} from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js';
 import {
   getFirestore,
   doc,
@@ -21,7 +21,7 @@ import {
   collection,
   getDocs,
   writeBatch,
-} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+} from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js';
 
 import { firebaseConfig } from './firebase-config.js';
 
