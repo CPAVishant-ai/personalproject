@@ -23,7 +23,7 @@ import {
   writeBatch,
 } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js';
 
-import { firebaseConfig } from './firebase-config.js';
+const firebaseConfig = window.FIREBASE_CONFIG;
 
 // ── Init ──────────────────────────────────────────────────────────────
 const app      = initializeApp(firebaseConfig);
