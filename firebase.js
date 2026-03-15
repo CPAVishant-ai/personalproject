@@ -7,8 +7,7 @@ import { initializeApp }   from 'https://www.gstatic.com/firebasejs/12.10.0/fire
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   signOut,
   onAuthStateChanged,
 } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js';
@@ -112,12 +111,9 @@ async function clearAllExpenses(uid) {
   }
 }
 
-// ── Catch redirect result on page reload after sign-in ────────────────
-getRedirectResult(auth).catch(err => console.error('Redirect result error:', err));
-
 // ── Expose to global scope ────────────────────────────────────────────
 window._fb = {
-  signIn:               () => signInWithRedirect(auth, provider),
+  signIn:               () => signInWithPopup(auth, provider),
   signOut:              () => signOut(auth),
   loadUserData,
   saveSettings,
