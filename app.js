@@ -51,7 +51,7 @@ const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct
 
 /* ============================================================ INIT */
 document.addEventListener('DOMContentLoaded', () => {
-  initTheme(); // theme can apply immediately (stored in localStorage)
+  initFontSize(); // apply saved font size immediately
 });
 
 // Firebase resolves auth state and dispatches this event (see firebase.js)
@@ -226,6 +226,9 @@ function navigate(page) {
   };
   document.getElementById('pageTitle').textContent = titles[page] || page;
 
+  // Close mobile sidebar on navigation
+  closeMobileSidebar();
+
   refreshCurrentPage(page);
   return false;
 }
@@ -251,6 +254,17 @@ function refreshCurrentPage(forcePage) {
   }
 }
 
+/* ============================================================ MOBILE SIDEBAR */
+function openMobileSidebar() {
+  document.getElementById('sidebar').classList.add('mobile-open');
+  document.getElementById('sidebarOverlay').classList.add('visible');
+}
+
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebarOverlay').classList.remove('visible');
+}
+
 /* ============================================================ SIDEBAR TOGGLE */
 function initSidebar() {
   const btn = document.getElementById('sidebarToggle');
@@ -260,31 +274,24 @@ function initSidebar() {
   });
 }
 
-/* ============================================================ THEME */
-function initTheme() {
-  const saved = localStorage.getItem('rupaiya_theme') || 'dark';
-  setTheme(saved);
-  document.getElementById('themeToggle').addEventListener('click', () => {
-    const current = document.body.classList.contains('dark') ? 'dark' : 'light';
-    setTheme(current === 'dark' ? 'light' : 'dark');
-  });
+/* ============================================================ FONT SIZE */
+function initFontSize() {
+  const saved = parseInt(localStorage.getItem('rupaiya_font_size'), 10) || 16;
+  document.documentElement.style.setProperty('--base-font-size', saved + 'px');
+  // Highlight the active button once settings page renders
+  document.addEventListener('rupaiya:settingsRendered', () => syncFontSizeBtns(saved));
 }
 
-function setTheme(theme) {
-  document.body.className = theme;
-  localStorage.setItem('rupaiya_theme', theme);
-  const icon = document.getElementById('themeIcon');
-  const label = document.querySelector('#themeToggle .nav-label');
-  if (theme === 'dark') {
-    icon.textContent = '☀️';
-    if (label) label.textContent = 'Light Mode';
-  } else {
-    icon.textContent = '🌙';
-    if (label) label.textContent = 'Dark Mode';
-  }
-  // Re-render charts for theme
-  if (document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
-  if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+function setFontSize(px, btn) {
+  document.documentElement.style.setProperty('--base-font-size', px + 'px');
+  localStorage.setItem('rupaiya_font_size', px);
+  syncFontSizeBtns(px);
+}
+
+function syncFontSizeBtns(px) {
+  document.querySelectorAll('.font-size-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.size, 10) === px);
+  });
 }
 
 /* ============================================================ GLOBAL MONTH FILTER */
@@ -1698,6 +1705,9 @@ function renderSettings() {
   renderTagList('categoriesList', state.categories, 'category');
   renderTagList('natureTagsList', state.nature, 'nature');
   renderTagList('paidByList', state.paidBy, 'paidby');
+  // Sync font size buttons
+  const saved = parseInt(localStorage.getItem('rupaiya_font_size'), 10) || 16;
+  syncFontSizeBtns(saved);
 }
 
 function renderTagList(containerId, items, type) {

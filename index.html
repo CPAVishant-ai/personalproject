@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rupaiya - Personal Expense Tracker</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <!-- SheetJS for Excel import/export -->
@@ -13,7 +16,10 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
-<body class="dark">
+<body>
+
+<!-- Mobile sidebar overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
 
 <!-- ══════════════════════════════════════════════════════════
      APP SHELL
@@ -84,10 +90,6 @@
         </div>
         <button class="sb-signout" onclick="window._fb.signOut()" title="Sign out">&#9210;</button>
       </div>
-      <button class="sb-theme-btn" id="themeToggle">
-        <span class="sb-theme-icon" id="themeIcon">&#9728;&#65039;</span>
-        <span>Light Mode</span>
-      </button>
     </div>
   </aside>
   <!-- /.sidebar -->
@@ -98,6 +100,7 @@
     <!-- Top header bar -->
     <header class="main-header">
       <div class="mh-left">
+        <button class="hamburger-btn" id="hamburgerBtn" onclick="openMobileSidebar()" aria-label="Open menu">&#9776;</button>
         <h1 class="page-title" id="pageTitle">Dashboard</h1>
         <span class="current-date" id="currentDate"></span>
       </div>
@@ -488,6 +491,15 @@
               <button class="btn btn-danger" onclick="clearAllData()">&#128465; Clear All Data</button>
             </div>
             <input type="file" id="jsonImportFile" accept=".json" style="display:none" onchange="handleJSONImport(event)" />
+          </div>
+          <div class="card">
+            <h3>Font Size</h3>
+            <p class="hint">Choose your preferred text size. Preference is saved automatically.</p>
+            <div class="font-size-control">
+              <button class="font-size-btn" data-size="16" onclick="setFontSize(16, this)">Normal</button>
+              <button class="font-size-btn" data-size="18" onclick="setFontSize(18, this)">Large</button>
+              <button class="font-size-btn" data-size="20" onclick="setFontSize(20, this)">Extra Large</button>
+            </div>
           </div>
           <div class="card">
             <h3>About Rupaiya</h3>
