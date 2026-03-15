@@ -6,8 +6,7 @@
 import { initializeApp }   from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
 import {
   getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
+  signInAnonymously,
   signOut,
   onAuthStateChanged,
 } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js';
@@ -26,10 +25,15 @@ import {
 const firebaseConfig = window.FIREBASE_CONFIG;
 
 // ── Init ──────────────────────────────────────────────────────────────
-const app      = initializeApp(firebaseConfig);
-const auth     = getAuth(app);
-const db       = getFirestore(app);
-const provider = new GoogleAuthProvider();
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// ── Stable owner UID ──────────────────────────────────────────────────
+// Anonymous auth generates a new uid each session after signOut().
+// We pin the very first uid in localStorage so data is always at the
+// same Firestore path regardless of how many times the user signs out/in.
+const OWNER_UID_KEY = 'rupaiya_owner_uid';
 
 // ── Helpers ───────────────────────────────────────────────────────────
 function userExpenseRef(uid, id)   { return doc(db, 'users', uid, 'expenses', id); }
@@ -113,7 +117,7 @@ async function clearAllExpenses(uid) {
 
 // ── Expose to global scope ────────────────────────────────────────────
 window._fb = {
-  signIn:               () => signInWithPopup(auth, provider),
+  signIn:               () => signInAnonymously(auth),
   signOut:              () => signOut(auth),
   loadUserData,
   saveSettings,
@@ -128,5 +132,18 @@ window._fb = {
 
 // ── Auth state → dispatch custom event for app.js ────────────────────
 onAuthStateChanged(auth, user => {
-  document.dispatchEvent(new CustomEvent('firebase:authstate', { detail: user }));
+  if (user) {
+    // Pin the first anonymous uid so Firestore path never changes
+    let ownerUid = localStorage.getItem(OWNER_UID_KEY);
+    if (!ownerUid) {
+      ownerUid = user.uid;
+      localStorage.setItem(OWNER_UID_KEY, ownerUid);
+    }
+    // Expose a stable synthetic user object (no displayName/photo for anon)
+    document.dispatchEvent(new CustomEvent('firebase:authstate', {
+      detail: { uid: ownerUid, displayName: 'Owner', email: null, photoURL: null },
+    }));
+  } else {
+    document.dispatchEvent(new CustomEvent('firebase:authstate', { detail: null }));
+  }
 });
