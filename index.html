@@ -536,6 +536,9 @@
   <div class="bnav-item" data-page="settings" onclick="navigate('settings')">
     <span class="bnav-icon">&#9881;</span><span>Settings</span>
   </div>
+  <div class="bnav-item" onclick="window._fb.signOut()">
+    <span class="bnav-icon">&#128274;</span><span>Lock</span>
+  </div>
 </nav>
 
 <!-- ══════════════════════════════════════════════════════════
@@ -680,6 +683,13 @@
   // Change RUPAIYA_PASSWORD to your own secret before deploying.
   const RUPAIYA_PASSWORD = 'rupaiya2024';
 
+  // SHA-256 hash of the password becomes the deterministic owner uid,
+  // so the same password always maps to the same Firestore path on any device.
+  async function sha256hex(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
   async function handlePasswordUnlock(e) {
     e.preventDefault();
     const input = document.getElementById('passwordInput').value;
@@ -699,6 +709,12 @@
     btn.textContent = 'Unlocking…';
 
     try {
+      // Derive a stable uid from the password and pin it before signing in.
+      // firebase.js reads this key in onAuthStateChanged and uses it for all
+      // Firestore paths — same password → same hash → same data on every device.
+      const uid = await sha256hex(input);
+      localStorage.setItem('rupaiya_owner_uid', uid);
+
       await window._fb.signIn();
       // firebase:authstate event handled in app.js
     } catch (err) {
