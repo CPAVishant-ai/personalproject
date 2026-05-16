@@ -501,7 +501,7 @@ function renderRecentExpenses(expenses) {
   }
   container.innerHTML = recent.map(e => `
     <div class="recent-item">
-      <div class="recent-icon" style="background:${getCategoryColor(e.category)}22;color:${getCategoryColor(e.category)}">
+      <div class="recent-icon" style="background:${hexAlpha(getCategoryColor(e.category),0.13)};color:${getCategoryColor(e.category)}">
         ${getCategoryEmoji(e.category)}
       </div>
       <div class="recent-info">
@@ -581,7 +581,7 @@ function renderCategoryChart() {
   const ctx = document.getElementById('categoryChart').getContext('2d');
   chartInstances['categoryChart'] = new Chart(ctx, {
     type: 'doughnut',
-    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: getComputedStyle(document.body).getPropertyValue('--surface') }] },
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: document.body.classList.contains('dark') ? '#1e2130' : '#ffffff' }] },
     options: {
       responsive: true,
       plugins: {
@@ -604,7 +604,7 @@ function renderPaymentChart() {
   const ctx = document.getElementById('paymentChart').getContext('2d');
   chartInstances['paymentChart'] = new Chart(ctx, {
     type: 'pie',
-    data: { labels, datasets: [{ data, backgroundColor: PALETTES.cool, borderWidth: 2, borderColor: getComputedStyle(document.body).getPropertyValue('--surface') }] },
+    data: { labels, datasets: [{ data, backgroundColor: PALETTES.cool, borderWidth: 2, borderColor: document.body.classList.contains('dark') ? '#1e2130' : '#ffffff' }] },
     options: {
       responsive: true,
       plugins: {
@@ -729,7 +729,7 @@ function renderExpensesTable() {
       </td>
       <td>${formatDate(e.date)}</td>
       <td>
-        <span class="badge-category" style="background:${getCategoryColor(e.category)}22;color:${getCategoryColor(e.category)}">
+        <span class="badge-category" style="background:${hexAlpha(getCategoryColor(e.category),0.13)};color:${getCategoryColor(e.category)}">
           ${getCategoryEmoji(e.category)} ${e.category}
         </span>
       </td>
@@ -1237,11 +1237,12 @@ function clearAllData() {
 /* ============================================================ ANALYTICS */
 function renderAnalytics() {
   const all = getFilteredExpenses();
-  renderMonthCategoryBreakdown();
-  renderSmartInsights(all);
-  renderTopExpensesChart(all);
-  renderPaidByAnalyticsChart(all);
-  renderBudgetBars(all);
+  try { renderMonthCategoryBreakdown(); } catch(e) { console.error('catBreakdown:', e); }
+  try { renderSmartInsights(all); } catch(e) { console.error('smartInsights:', e); }
+  try { render6MonthTrend(); } catch(e) { console.error('6monthTrend:', e); }
+  try { renderTopExpensesChart(all); } catch(e) { console.error('topExpenses:', e); }
+  try { renderPaidByAnalyticsChart(all); } catch(e) { console.error('paidBy:', e); }
+  try { renderBudgetBars(all); } catch(e) { console.error('budgetBars:', e); }
 }
 
 function renderMonthCategoryBreakdown() {
@@ -1297,7 +1298,7 @@ function renderMonthCategoryBreakdown() {
     const color = getCategoryColor(cat);
 
     return `<div class="cat-row">
-      <div class="cat-row-emoji" style="background:${color}18;border-color:${color}30">${getCategoryEmoji(cat)}</div>
+      <div class="cat-row-emoji" style="background:${hexAlpha(color,0.09)};border-color:${hexAlpha(color,0.18)}">${getCategoryEmoji(cat)}</div>
       <div class="cat-row-main">
         <div class="cat-row-top">
           <span class="cat-row-name">${cat}</span>
@@ -1435,6 +1436,62 @@ function getDailyAvg(expenses) {
   return expenses.reduce((s,e)=>s+e.amount,0) / dates.size;
 }
 
+function render6MonthTrend() {
+  destroyChart('an6MonthChart');
+  const canvas = document.getElementById('an6MonthChart');
+  if (!canvas) return;
+
+  const now = new Date();
+  const months = [];
+  const totals = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = `${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+    const total = state.expenses.filter(e => e.date.startsWith(key)).reduce((s,e) => s + e.amount, 0);
+    months.push(label);
+    totals.push(total);
+  }
+
+  if (totals.every(v => v === 0)) {
+    canvas.style.display = 'none';
+    canvas.insertAdjacentHTML('afterend', '<div class="chart-empty"><div class="chart-empty-icon">📊</div>No data for the last 6 months</div>');
+    return;
+  }
+
+  const isDark = document.body.classList.contains('dark');
+  const textColor = isDark ? '#a0a8c0' : '#6b7280';
+  const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
+  const ctx = canvas.getContext('2d');
+  chartInstances['an6MonthChart'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{
+        data: totals,
+        backgroundColor: totals.map((v, i) => {
+          const isCurrentMonth = i === 5;
+          return isCurrentMonth ? '#2563EB' : 'rgba(37,99,235,0.2)';
+        }),
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${formatINR(c.raw)}` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: textColor, font: { size: 11 } } },
+        y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => '₹' + formatNum(v) }, beginAtZero: true }
+      }
+    }
+  });
+}
+
 function renderHeatmap() {
   const container = document.getElementById('heatmapContainer');
   const today = new Date();
@@ -1561,7 +1618,12 @@ function renderTopExpensesChart(expenses) {
   const textColor = isDark ? '#a0a8c0' : '#6b7280';
 
   destroyChart('topExpensesChart');
-  if (data.length === 0) return;
+  const wrap = document.getElementById('topExpensesWrap');
+  if (data.length === 0) {
+    if (wrap) wrap.innerHTML = '<div class="chart-empty"><div class="chart-empty-icon">🏆</div>No expenses to display</div>';
+    return;
+  }
+  if (wrap) wrap.innerHTML = '<canvas id="topExpensesChart"></canvas>';
   const ctx = document.getElementById('topExpensesChart').getContext('2d');
   chartInstances['topExpensesChart'] = new Chart(ctx, {
     type: 'bar',
@@ -1587,11 +1649,17 @@ function renderPaidByAnalyticsChart(expenses) {
   const data = labels.map(k => byPay[k].reduce((s,e)=>s+e.amount,0));
 
   destroyChart('paidByAnalyticsChart');
-  if (data.length === 0) return;
+  const wrap = document.getElementById('paidByWrap');
+  if (data.length === 0) {
+    if (wrap) wrap.innerHTML = '<div class="chart-empty"><div class="chart-empty-icon">💳</div>No payment data</div>';
+    return;
+  }
+  if (wrap) wrap.innerHTML = '<canvas id="paidByAnalyticsChart"></canvas>';
   const ctx = document.getElementById('paidByAnalyticsChart').getContext('2d');
+  const bgColor = document.body.classList.contains('dark') ? '#1e2130' : '#ffffff';
   chartInstances['paidByAnalyticsChart'] = new Chart(ctx, {
     type: 'doughnut',
-    data: { labels, datasets: [{ data, backgroundColor: PALETTES.cool, borderWidth: 2, borderColor: getComputedStyle(document.body).getPropertyValue('--surface') }] },
+    data: { labels, datasets: [{ data, backgroundColor: PALETTES.cool, borderWidth: 2, borderColor: bgColor }] },
     options: {
       responsive: true,
       cutout: '60%',
@@ -1977,6 +2045,13 @@ function groupBy(arr, key) {
 function getCategoryColor(category) {
   const idx = state.categories.indexOf(category);
   return CATEGORY_COLORS[idx >= 0 ? idx % CATEGORY_COLORS.length : 0];
+}
+
+function hexAlpha(hex, alpha) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 function getCategoryEmoji(category) {

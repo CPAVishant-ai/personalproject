@@ -343,15 +343,23 @@
         <!-- Smart Insights Grid -->
         <div class="smart-insights-grid" id="smartInsightsGrid"></div>
 
+        <!-- 6-Month Trend -->
+        <div class="card chart-card-full">
+          <div class="chart-header">
+            <h3>6-Month Spending Trend</h3>
+          </div>
+          <canvas id="an6MonthChart"></canvas>
+        </div>
+
         <!-- Top expenses + Payment Method -->
         <div class="charts-row">
           <div class="card chart-card wide">
             <div class="chart-header"><h3>Top 10 Largest Expenses</h3></div>
-            <canvas id="topExpensesChart"></canvas>
+            <div id="topExpensesWrap"><canvas id="topExpensesChart"></canvas></div>
           </div>
           <div class="card chart-card">
             <div class="chart-header"><h3>Payment Method</h3></div>
-            <canvas id="paidByAnalyticsChart"></canvas>
+            <div id="paidByWrap"><canvas id="paidByAnalyticsChart"></canvas></div>
           </div>
         </div>
 
