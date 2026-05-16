@@ -343,18 +343,6 @@
         <!-- Smart Insights Grid -->
         <div class="smart-insights-grid" id="smartInsightsGrid"></div>
 
-        <!-- Category Trend Over Time -->
-        <div class="card chart-card-full">
-          <div class="chart-header">
-            <h3>Category Trend · All Months</h3>
-            <select id="catMonthChartType" onchange="renderCatMonthChart()">
-              <option value="bar">Stacked Bar</option>
-              <option value="line">Line</option>
-            </select>
-          </div>
-          <canvas id="catMonthChart" style="max-height:280px"></canvas>
-        </div>
-
         <!-- Top expenses + Payment Method -->
         <div class="charts-row">
           <div class="card chart-card wide">
@@ -365,12 +353,6 @@
             <div class="chart-header"><h3>Payment Method</h3></div>
             <canvas id="paidByAnalyticsChart"></canvas>
           </div>
-        </div>
-
-        <!-- Heatmap -->
-        <div class="card">
-          <div class="chart-header"><h3>Daily Activity · Last 6 Months</h3></div>
-          <div id="heatmapContainer" class="heatmap-container"></div>
         </div>
 
         <!-- Budget Tracker -->

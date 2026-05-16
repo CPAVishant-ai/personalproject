@@ -1239,10 +1239,8 @@ function renderAnalytics() {
   const all = getFilteredExpenses();
   renderMonthCategoryBreakdown();
   renderSmartInsights(all);
-  renderCatMonthChart();
   renderTopExpensesChart(all);
   renderPaidByAnalyticsChart(all);
-  renderHeatmap();
   renderBudgetBars(all);
 }
 
@@ -1294,23 +1292,27 @@ function renderMonthCategoryBreakdown() {
     const prevAmt = prevByCat[cat] || 0;
     const change  = prevAmt > 0 ? ((data.amount - prevAmt) / prevAmt * 100) : null;
     const changeHtml = change !== null
-      ? `<span class="cat-change ${change > 0 ? 'up' : 'down'}">${change > 0 ? '↑' : '↓'} ${Math.abs(change).toFixed(0)}% vs last mo</span>`
-      : `<span class="cat-change new-cat">First time</span>`;
+      ? `<span class="cat-change ${change > 0 ? 'up' : 'down'}">${change > 0 ? '↑' : '↓'}${Math.abs(change).toFixed(0)}%</span>`
+      : `<span class="cat-change new-cat">New</span>`;
+    const color = getCategoryColor(cat);
 
     return `<div class="cat-row">
-      <div class="cat-row-emoji">${getCategoryEmoji(cat)}</div>
+      <div class="cat-row-emoji" style="background:${color}18;border-color:${color}30">${getCategoryEmoji(cat)}</div>
       <div class="cat-row-main">
         <div class="cat-row-top">
           <span class="cat-row-name">${cat}</span>
-          <span class="cat-row-amount">${formatINR(data.amount)}</span>
+          <div class="cat-row-right">
+            <span class="cat-row-amount" style="color:${color}">${formatINR(data.amount)}</span>
+            ${changeHtml}
+          </div>
         </div>
-        <div class="cat-row-bar-wrap">
-          <div class="cat-row-bar" style="width:${barW}%;background:${getCategoryColor(cat)}"></div>
+        <div class="cat-row-bar-row">
+          <div class="cat-row-bar-wrap">
+            <div class="cat-row-bar" style="width:${barW}%;background:${color}"></div>
+          </div>
+          <span class="cat-row-pct">${pct.toFixed(0)}%</span>
         </div>
-        <div class="cat-row-meta-row">
-          <span class="cat-row-meta">${data.count} txn${data.count > 1 ? 's' : ''} · ${pct.toFixed(1)}% of total</span>
-          ${changeHtml}
-        </div>
+        <span class="cat-row-meta">${data.count} transaction${data.count > 1 ? 's' : ''}</span>
       </div>
     </div>`;
   }).join('');
