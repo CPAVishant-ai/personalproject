@@ -328,13 +328,25 @@
       <!-- ═══════════════════ ANALYTICS PAGE ═══════════════════ -->
       <section class="page" id="page-analytics">
 
-        <!-- Insight summary cards -->
-        <div class="cards-grid" id="insightCards"></div>
+        <!-- Category Breakdown — Hero Section -->
+        <div class="card an-cat-card">
+          <div class="an-cat-header">
+            <div class="an-cat-header-left">
+              <div class="an-cat-title">Spending by Category</div>
+              <div class="an-cat-period" id="catBreakdownPeriod">This month</div>
+            </div>
+            <div class="an-cat-total" id="catBreakdownTotal"></div>
+          </div>
+          <div id="catBreakdownList"></div>
+        </div>
 
-        <!-- Category spend by month — primary analytics view -->
+        <!-- Smart Insights Grid -->
+        <div class="smart-insights-grid" id="smartInsightsGrid"></div>
+
+        <!-- Category Trend Over Time -->
         <div class="card chart-card-full">
           <div class="chart-header">
-            <h3>Category Spending · Month by Month</h3>
+            <h3>Category Trend · All Months</h3>
             <select id="catMonthChartType" onchange="renderCatMonthChart()">
               <option value="bar">Stacked Bar</option>
               <option value="line">Line</option>
@@ -343,28 +355,28 @@
           <canvas id="catMonthChart" style="max-height:280px"></canvas>
         </div>
 
-        <!-- Top expenses + paid-by breakdown -->
+        <!-- Top expenses + Payment Method -->
         <div class="charts-row">
           <div class="card chart-card wide">
             <div class="chart-header"><h3>Top 10 Largest Expenses</h3></div>
             <canvas id="topExpensesChart"></canvas>
           </div>
           <div class="card chart-card">
-            <div class="chart-header"><h3>Paid By Distribution</h3></div>
+            <div class="chart-header"><h3>Payment Method</h3></div>
             <canvas id="paidByAnalyticsChart"></canvas>
           </div>
         </div>
 
-        <!-- Spending heatmap -->
+        <!-- Heatmap -->
         <div class="card">
-          <div class="chart-header"><h3>Daily Spending Heatmap · Last 6 Months</h3></div>
+          <div class="chart-header"><h3>Daily Activity · Last 6 Months</h3></div>
           <div id="heatmapContainer" class="heatmap-container"></div>
         </div>
 
-        <!-- Budget tracker -->
+        <!-- Budget Tracker -->
         <div class="card">
           <div class="chart-header">
-            <h3>Category Budget Tracker</h3>
+            <h3>Budget Tracker · This Month</h3>
             <button class="btn btn-sm btn-outline" onclick="openBudgetModal()">Set Budgets</button>
           </div>
           <div id="budgetBars" class="budget-bars"></div>

@@ -1237,46 +1237,194 @@ function clearAllData() {
 /* ============================================================ ANALYTICS */
 function renderAnalytics() {
   const all = getFilteredExpenses();
-  renderInsightCards(all);
-  renderHeatmap();
+  renderMonthCategoryBreakdown();
+  renderSmartInsights(all);
   renderCatMonthChart();
   renderTopExpensesChart(all);
   renderPaidByAnalyticsChart(all);
+  renderHeatmap();
   renderBudgetBars(all);
 }
 
-function renderInsightCards(expenses) {
-  if (expenses.length === 0) {
-    document.getElementById('insightCards').innerHTML = '';
+function renderMonthCategoryBreakdown() {
+  const now = new Date();
+  const curMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const selected = document.getElementById('globalMonthFilter').value;
+  const month = (selected && selected !== 'all') ? selected : curMonth;
+
+  const [y, m] = month.split('-').map(Number);
+  const prevDate = new Date(y, m - 2, 1);
+  const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`;
+
+  const monthExp = state.expenses.filter(e => e.date.startsWith(month));
+  const prevMonthExp = state.expenses.filter(e => e.date.startsWith(prevMonth));
+  const total = monthExp.reduce((s,e) => s + e.amount, 0);
+
+  const byCat = {};
+  monthExp.forEach(e => {
+    if (!byCat[e.category]) byCat[e.category] = { amount: 0, count: 0 };
+    byCat[e.category].amount += e.amount;
+    byCat[e.category].count++;
+  });
+
+  const prevByCat = {};
+  prevMonthExp.forEach(e => { prevByCat[e.category] = (prevByCat[e.category] || 0) + e.amount; });
+
+  const sorted = Object.entries(byCat).sort((a,b) => b[1].amount - a[1].amount);
+  const maxAmt = sorted.length ? sorted[0][1].amount : 1;
+
+  const [yr, mo] = month.split('-');
+  const label = `${MONTHS_SHORT[parseInt(mo)-1]} ${yr}`;
+  const periodEl = document.getElementById('catBreakdownPeriod');
+  const totalEl  = document.getElementById('catBreakdownTotal');
+  if (periodEl) periodEl.textContent = label;
+  if (totalEl)  totalEl.textContent  = formatINR(total);
+
+  const list = document.getElementById('catBreakdownList');
+  if (!list) return;
+
+  if (sorted.length === 0) {
+    list.innerHTML = '<p class="hint" style="padding:28px;text-align:center">No expenses for this period.</p>';
     return;
   }
 
-  const total = expenses.reduce((s,e)=>s+e.amount,0);
-  const avg = total / expenses.length;
-  const sorted = [...expenses].sort((a,b)=>b.amount-a.amount);
-  const max = sorted[0];
-  const byCat = groupBy(expenses, 'category');
-  const mostFreqCat = Object.entries(byCat).sort((a,b)=>b[1].length-a[1].length)[0];
-  const byPay = groupBy(expenses, 'paidBy');
-  const topPay = Object.entries(byPay).sort((a,b)=>b[1].reduce((s,e)=>s+e.amount,0)-a[1].reduce((s,e)=>s+e.amount,0))[0];
+  list.innerHTML = sorted.map(([cat, data]) => {
+    const pct    = total > 0 ? (data.amount / total * 100) : 0;
+    const barW   = (data.amount / maxAmt * 100).toFixed(1);
+    const prevAmt = prevByCat[cat] || 0;
+    const change  = prevAmt > 0 ? ((data.amount - prevAmt) / prevAmt * 100) : null;
+    const changeHtml = change !== null
+      ? `<span class="cat-change ${change > 0 ? 'up' : 'down'}">${change > 0 ? '↑' : '↓'} ${Math.abs(change).toFixed(0)}% vs last mo</span>`
+      : `<span class="cat-change new-cat">First time</span>`;
 
-  const insights = [
-    { emoji: '💰', label: 'Total Spent', value: formatINR(total), sub: `${expenses.length} transactions`, color: '#6c63ff' },
-    { emoji: '📊', label: 'Average per Transaction', value: formatINR(avg), sub: 'per expense', color: '#10b981' },
-    { emoji: '🔝', label: 'Biggest Expense', value: formatINR(max.amount), sub: max.description || max.category, color: '#ef4444' },
-    { emoji: '🏆', label: 'Most Frequent Category', value: mostFreqCat[0], sub: `${mostFreqCat[1].length} times`, color: '#f59e0b' },
-    { emoji: '💳', label: 'Top Payment Method', value: topPay[0], sub: formatINR(topPay[1].reduce((s,e)=>s+e.amount,0)), color: '#3b82f6' },
-    { emoji: '📅', label: 'Avg Daily Spend', value: formatINR(getDailyAvg(expenses)), sub: 'across all days', color: '#8b5cf6' },
-  ];
+    return `<div class="cat-row">
+      <div class="cat-row-emoji">${getCategoryEmoji(cat)}</div>
+      <div class="cat-row-main">
+        <div class="cat-row-top">
+          <span class="cat-row-name">${cat}</span>
+          <span class="cat-row-amount">${formatINR(data.amount)}</span>
+        </div>
+        <div class="cat-row-bar-wrap">
+          <div class="cat-row-bar" style="width:${barW}%;background:${getCategoryColor(cat)}"></div>
+        </div>
+        <div class="cat-row-meta-row">
+          <span class="cat-row-meta">${data.count} txn${data.count > 1 ? 's' : ''} · ${pct.toFixed(1)}% of total</span>
+          ${changeHtml}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
-  document.getElementById('insightCards').innerHTML = `<div class="cards-grid">${insights.map(i => `
-    <div class="insight-card" style="border-color:${i.color}">
-      <div class="insight-emoji">${i.emoji}</div>
-      <div class="insight-label">${i.label}</div>
-      <div class="insight-value">${i.value}</div>
-      <div class="insight-sub">${i.sub}</div>
+function renderSmartInsights(expenses) {
+  const grid = document.getElementById('smartInsightsGrid');
+  if (!grid) return;
+  if (expenses.length === 0) { grid.innerHTML = ''; return; }
+
+  const now = new Date();
+  const curMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const prevDate  = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`;
+
+  const thisMonth = state.expenses.filter(e => e.date.startsWith(curMonth));
+  const lastMonth = state.expenses.filter(e => e.date.startsWith(prevMonth));
+  const thisTotal = thisMonth.reduce((s,e) => s + e.amount, 0);
+  const lastTotal = lastMonth.reduce((s,e) => s + e.amount, 0);
+
+  const insights = [];
+
+  // Month-over-month
+  if (lastTotal > 0) {
+    const diff = thisTotal - lastTotal;
+    const pct  = Math.abs(diff / lastTotal * 100).toFixed(0);
+    insights.push({
+      icon: diff >= 0 ? '📈' : '📉',
+      title: 'Month over Month',
+      value: (diff >= 0 ? '+' : '') + formatINR(diff),
+      sub: `${pct}% ${diff >= 0 ? 'higher' : 'lower'} than ${MONTHS_SHORT[prevDate.getMonth()]}`,
+      color: diff >= 0 ? '#EF4444' : '#10B981',
+    });
+  }
+
+  // Highest spend day of week
+  const byDow = Array(7).fill(0);
+  const cntDow = Array(7).fill(0);
+  expenses.forEach(e => { const d = new Date(e.date + 'T00:00:00').getDay(); byDow[d] += e.amount; cntDow[d]++; });
+  const maxDow = byDow.indexOf(Math.max(...byDow));
+  if (byDow[maxDow] > 0) {
+    insights.push({
+      icon: '📅',
+      title: 'Highest Spend Day',
+      value: DOW_LABELS[maxDow],
+      sub: `${formatINR(byDow[maxDow])} total · ${cntDow[maxDow]} transactions`,
+      color: '#3B82F6',
+    });
+  }
+
+  // Weekend vs weekday daily avg
+  const wkndExp = expenses.filter(e => [0,6].includes(new Date(e.date + 'T00:00:00').getDay()));
+  const wkdyExp = expenses.filter(e => ![0,6].includes(new Date(e.date + 'T00:00:00').getDay()));
+  const wkndDays = Math.max(new Set(wkndExp.map(e => e.date)).size, 1);
+  const wkdyDays = Math.max(new Set(wkdyExp.map(e => e.date)).size, 1);
+  const wkndAvg  = wkndExp.reduce((s,e) => s + e.amount, 0) / wkndDays;
+  const wkdyAvg  = wkdyExp.reduce((s,e) => s + e.amount, 0) / wkdyDays;
+  insights.push({
+    icon: '⚖️',
+    title: 'Weekend vs Weekday',
+    value: `${formatINR(wkndAvg)}/day`,
+    sub: `Weekend avg · Weekdays: ${formatINR(wkdyAvg)}/day`,
+    color: '#8B5CF6',
+  });
+
+  // Top 3 category concentration
+  const byCat = {};
+  expenses.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + e.amount; });
+  const catTotal = Object.values(byCat).reduce((s,v) => s + v, 0);
+  const top3sum  = Object.values(byCat).sort((a,b) => b-a).slice(0,3).reduce((s,v) => s + v, 0);
+  const top3cats = Object.entries(byCat).sort((a,b) => b[1]-a[1]).slice(0,3).map(([k]) => k).join(', ');
+  const conc = catTotal > 0 ? (top3sum / catTotal * 100).toFixed(0) : 0;
+  insights.push({
+    icon: '🎯',
+    title: 'Top 3 Concentration',
+    value: `${conc}% of spend`,
+    sub: top3cats || '—',
+    color: '#F59E0B',
+  });
+
+  // Avg transaction + outliers
+  const avg = expenses.reduce((s,e) => s + e.amount, 0) / expenses.length;
+  const big = expenses.filter(e => e.amount > avg * 2).length;
+  insights.push({
+    icon: '💡',
+    title: 'Avg Transaction',
+    value: formatINR(avg),
+    sub: `${big} transaction${big !== 1 ? 's' : ''} are 2× above average`,
+    color: '#14B8A6',
+  });
+
+  // Biggest month ever (all-time)
+  const byMonth = {};
+  state.expenses.forEach(e => { byMonth[e.date.substring(0,7)] = (byMonth[e.date.substring(0,7)] || 0) + e.amount; });
+  if (Object.keys(byMonth).length > 0) {
+    const top = Object.entries(byMonth).sort((a,b) => b[1]-a[1])[0];
+    const [tmy, tmm] = top[0].split('-');
+    insights.push({
+      icon: '🏔️',
+      title: 'Biggest Month Ever',
+      value: `${MONTHS_SHORT[parseInt(tmm)-1]} ${tmy}`,
+      sub: formatINR(top[1]) + ' spent',
+      color: '#EC4899',
+    });
+  }
+
+  grid.innerHTML = insights.map(i => `
+    <div class="smart-insight-card" style="--si-accent:${i.color}">
+      <div class="si-icon">${i.icon}</div>
+      <div class="si-title">${i.title}</div>
+      <div class="si-value">${i.value}</div>
+      <div class="si-sub">${i.sub}</div>
     </div>
-  `).join('')}</div>`;
+  `).join('');
 }
 
 function getDailyAvg(expenses) {
