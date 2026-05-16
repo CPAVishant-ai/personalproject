@@ -158,7 +158,7 @@
           </div>
         </div>
 
-        <div class="charts-row">
+        <div class="charts-row charts-row-3">
           <div class="card chart-card">
             <div class="chart-header"><h3>Payment Method</h3></div>
             <canvas id="paymentChart"></canvas>
@@ -327,27 +327,26 @@
 
       <!-- ═══════════════════ ANALYTICS PAGE ═══════════════════ -->
       <section class="page" id="page-analytics">
+
+        <!-- Insight summary cards -->
         <div class="cards-grid" id="insightCards"></div>
 
-        <div class="card">
-          <div class="chart-header"><h3>Spending Heatmap (Last 6 Months)</h3></div>
-          <div id="heatmapContainer" class="heatmap-container"></div>
-        </div>
-
+        <!-- Category spend by month — primary analytics view -->
         <div class="card chart-card-full">
           <div class="chart-header">
-            <h3>Category Spending Over Months</h3>
+            <h3>Category Spending · Month by Month</h3>
             <select id="catMonthChartType" onchange="renderCatMonthChart()">
               <option value="bar">Stacked Bar</option>
               <option value="line">Line</option>
             </select>
           </div>
-          <canvas id="catMonthChart"></canvas>
+          <canvas id="catMonthChart" style="max-height:280px"></canvas>
         </div>
 
+        <!-- Top expenses + paid-by breakdown -->
         <div class="charts-row">
           <div class="card chart-card wide">
-            <div class="chart-header"><h3>Top 10 Expenses</h3></div>
+            <div class="chart-header"><h3>Top 10 Largest Expenses</h3></div>
             <canvas id="topExpensesChart"></canvas>
           </div>
           <div class="card chart-card">
@@ -356,6 +355,13 @@
           </div>
         </div>
 
+        <!-- Spending heatmap -->
+        <div class="card">
+          <div class="chart-header"><h3>Daily Spending Heatmap · Last 6 Months</h3></div>
+          <div id="heatmapContainer" class="heatmap-container"></div>
+        </div>
+
+        <!-- Budget tracker -->
         <div class="card">
           <div class="chart-header">
             <h3>Category Budget Tracker</h3>
@@ -363,6 +369,7 @@
           </div>
           <div id="budgetBars" class="budget-bars"></div>
         </div>
+
       </section>
 
       <!-- ═══════════════════ CUSTOM CHARTS PAGE ═══════════════════ -->
