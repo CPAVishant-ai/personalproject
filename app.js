@@ -251,6 +251,7 @@ function refreshCurrentPage(forcePage) {
     case 'analytics':    renderAnalytics(); break;
     case 'custom-charts': updateCustomChart(); break;
     case 'settings':     renderSettings(); break;
+    case 'import':       renderImportHistory(); break;
   }
 }
 
@@ -1030,7 +1031,14 @@ function importData() {
 
   let imported = 0, skipped = 0;
   const now = Date.now();
+  const importId = 'imp_' + now;   // unique tag for this batch
   const prevLength = state.expenses.length;
+
+  const descCol  = getCol('description');
+  const catCol   = getCol('category');
+  const natCol   = getCol('nature');
+  const payCol   = getCol('paidBy');
+  const notesCol = getCol('notes');
 
   importData_raw.forEach((row, idx) => {
     const rawDate = row[dateCol];
@@ -1040,12 +1048,6 @@ function importData() {
     const parsedDate = parseExcelDate(rawDate);
     const parsedAmt = parseFloat(String(rawAmt).replace(/[^0-9.-]/g, ''));
     if (!parsedDate || isNaN(parsedAmt) || parsedAmt <= 0) { skipped++; return; }
-
-    const descCol = getCol('description');
-    const catCol = getCol('category');
-    const natCol = getCol('nature');
-    const payCol = getCol('paidBy');
-    const notesCol = getCol('notes');
 
     const rawCat = catCol !== null ? (row[catCol] || '') : '';
     const rawNat = natCol !== null ? (row[natCol] || '') : '';
@@ -1058,6 +1060,7 @@ function importData() {
 
     state.expenses.push({
       id: generateId() + idx,
+      importId,
       date: parsedDate,
       amount: parsedAmt,
       description: descCol !== null ? (row[descCol] || '') : '',
@@ -1086,7 +1089,10 @@ function importData() {
   resultEl.style.display = 'block';
   document.getElementById('mappingSection').style.display = 'none';
 
-  if (imported > 0) showToast(`${imported} expenses imported!`, 'success');
+  if (imported > 0) {
+    showToast(`${imported} expenses imported!`, 'success');
+    renderImportHistory();
+  }
 }
 
 function matchOrAdd(value, list, defaultVal) {
@@ -1105,6 +1111,64 @@ function cancelImport() {
   document.getElementById('importResult').style.display = 'none';
   importData_raw = null;
   document.getElementById('fileInput').value = '';
+}
+
+function renderImportHistory() {
+  const container = document.getElementById('importHistory');
+  if (!container) return;
+
+  // Group expenses by importId
+  const batches = {};
+  state.expenses.forEach(e => {
+    if (!e.importId) return;
+    if (!batches[e.importId]) {
+      batches[e.importId] = { id: e.importId, timestamp: parseInt(e.importId.replace('imp_', '')), count: 0, total: 0 };
+    }
+    batches[e.importId].count++;
+    batches[e.importId].total += e.amount;
+  });
+
+  const sorted = Object.values(batches).sort((a, b) => b.timestamp - a.timestamp);
+
+  if (sorted.length === 0) {
+    container.innerHTML = '<p class="hint" style="padding:8px 0">No Excel imports found. Future imports will appear here.</p>';
+    return;
+  }
+
+  container.innerHTML = sorted.map(b => {
+    const d = new Date(b.timestamp);
+    const dateStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    return `
+      <div class="import-history-row" id="imp-row-${b.id}">
+        <div class="import-history-icon">📥</div>
+        <div class="import-history-info">
+          <div class="import-history-date">${dateStr} · ${timeStr}</div>
+          <div class="import-history-meta">${b.count} expense${b.count !== 1 ? 's' : ''} · ${formatINR(b.total)}</div>
+        </div>
+        <button class="btn btn-sm btn-danger-outline" onclick="deleteImport('${b.id}', ${b.count})">&#128465; Delete</button>
+      </div>`;
+  }).join('');
+}
+
+async function deleteImport(importId, count) {
+  const confirmed = confirm(`Delete all ${count} expenses from this import?\n\nThis cannot be undone.`);
+  if (!confirmed) return;
+
+  const ids = state.expenses.filter(e => e.importId === importId).map(e => e.id);
+  if (!ids.length) return;
+
+  state.expenses = state.expenses.filter(e => e.importId !== importId);
+
+  if (currentUserId) {
+    window._fb.batchDeleteExpenses(currentUserId, ids).catch(console.error);
+  }
+
+  renderImportHistory();
+  populateGlobalMonthFilter();
+  renderSidebarStats();
+  refreshCurrentPage('import');
+  showToast(`Deleted ${ids.length} imported expenses.`, 'success');
 }
 
 function parseExcelDate(val) {
